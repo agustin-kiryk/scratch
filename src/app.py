@@ -1,8 +1,8 @@
-from flask import Flask;
-from dotenv import load_dotenv;
-from config.mongodb import mongo;
-import os;
-from routes.register import register_blueprint;
+from flask import Flask
+from dotenv import load_dotenv
+from config.mongodb import mongo
+import os
+from routes.register import register_blueprint
 
 load_dotenv()
 
