@@ -13,5 +13,3 @@ def register_user_app():
     # Llama a la función del servicio para registrar un nuevo usuario
     response = register_new_user()
     return response, 200  # Devuelve la respuesta del servicio como JSON con código de estado 200
-
-
