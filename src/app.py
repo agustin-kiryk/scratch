@@ -1,8 +1,8 @@
-from flask import Flask;
-from dotenv import load_dotenv;
-from config.mongodb import mongo;
-import os;
-from routes.register import register_blueprint;
+from flask import Flask
+from dotenv import load_dotenv
+from src.config.mongodb import mongo
+import os
+from src.routes.register import register_blueprint
 
 load_dotenv()
 
@@ -15,7 +15,8 @@ mongo.init_app(app)
 def index():
     return 'Hello world'
 
-app.register_blueprint(register_blueprint, url_prefix = '/user')
+
+app.register_blueprint(register_blueprint, url_prefix='/user')
 
 if __name__ == '__main__':
     app.run(debug=True)
