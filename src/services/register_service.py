@@ -3,6 +3,7 @@ import json
 import secrets
 
 from flask import request, Response, jsonify
+from flask_jwt_extended import create_access_token
 
 from src.config.mongodb import mongo
 from src.models.User_model import User
@@ -21,6 +22,7 @@ def register_new_user():
 
     # Crear un objeto de usuario
     gen_pin = generate_pin()
+    print('PIN GENERATED:', gen_pin)
     encode_pin = hash_pin(gen_pin)
     new_user = build_new_user(data, encode_pin)
 
@@ -83,23 +85,13 @@ def verify_pin(provided_pin, stored_pin):
 
 def test_login():
     data = request.get_json()
-    existing_user = mongo.db.users.find_one({'email': data.get('email', None)})
+    existing_user = mongo.db.users.find_one({'email': data.get('email')})
 
-    # Verificar si el usuario existe
     if existing_user:
-        stored_pin = existing_user.get('pin', None)  # Obtener el PIN almacenado del usuario
-        if stored_pin:
+        stored_pin = existing_user.get('pin')
+        if stored_pin and verify_pin(data.get('pin'), stored_pin):
+            access_token = create_access_token(identity=str(existing_user['_id']))
+            return jsonify(access_token=access_token), 200
+        return Response(json.dumps({'error': 'Invalid credentials'}), status=401, mimetype='application/json')
 
-            # Verificar el PIN proporcionado por el usuario con el PIN almacenado
-            if verify_pin(data.get('pin', None), stored_pin):
-                response_data = json.dumps({'message': 'Login successful'})
-                return Response(response_data, status=200, mimetype='application/json')
-            else:
-                response_data = json.dumps({'error': 'Invalid credentials'})
-                return Response(response_data, status=401, mimetype='application/json')
-        else:
-            response_data = json.dumps({'error': 'User not haven pin'})
-            return Response(response_data, status=401, mimetype='application/json')
-    else:
-        response_data = json.dumps({'error': 'User not found'})
-        return Response(response_data, status=404, mimetype='application/json')
+    return Response(json.dumps({'error': 'User not found'}), status=404, mimetype='application/json')

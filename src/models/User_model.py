@@ -1,5 +1,5 @@
 class User:
-    def __init__(self, id, name, lastName, document, email, points=0, status=1, pin=str):
+    def __init__(self, id, name, lastName, document, email, points=0, status=1, pin=None):
         self.id = id
         self.name = name
         self.lastName = lastName
