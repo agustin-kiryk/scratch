@@ -8,6 +8,7 @@ from flask_jwt_extended import create_access_token
 from src.client.Twilio_client import send_verification_sms, verify_sms
 from src.config.mongodb import mongo
 from src.models.User_model import User
+from src.client.Flask_mail_client import send_verification_email, verify_email_code
 
 
 def register_new_user():
@@ -122,6 +123,7 @@ def handle_step_1(data):
         return Response(response_data, status=409, mimetype='application/json')
 
     phone_number = data.get('phone_number')
+    print(phone_number)
     send_verification_sms(phone_number)
 
     temp_user = {
@@ -142,6 +144,7 @@ def handle_step_1(data):
 def handle_step_2(data):
     phone_number = data.get('phone_number')
     sms_code = data.get('sms_code')
+    print(sms_code)
 
     if verify_sms(phone_number, sms_code):
         email_verification_code = ''.join(secrets.choice('0123456789') for _ in range(6))

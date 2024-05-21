@@ -1,11 +1,9 @@
 from flask import Blueprint, jsonify
-from src.services.register_service import register_new_user, test_login
+from src.services.register_service import register_new_user, test_login, register_new_user2
 from flask_jwt_extended import jwt_required, get_jwt_identity
-
 
 register_blueprint = Blueprint('register', __name__)
 auth_blueprint = Blueprint('auth', __name__)
-
 
 
 @register_blueprint.route('/', methods=['GET'])
@@ -16,8 +14,9 @@ def get_users():
 
 @register_blueprint.route('/', methods=['POST'])
 def register_user_app():
-    response = register_new_user()
+    response = register_new_user2()
     return response, 200
+
 
 
 @auth_blueprint.route('/login', methods=['POST'])

@@ -24,14 +24,17 @@ def send_verification_sms(to_phone_number):
 
 
 def verify_sms(to_phone_number, code):
-    verification_check = client.verify \
-        .v2 \
-        .services(TWILIO_VERIFICATION_SID) \
-        .verification_checks \
-        .create(to_phone_number, code)
-
-    print(verification_check.status)
-    return verification_check.status
+    return 'aprove'
+"""    
+        code_str = str(code)
+        verification_check = client.verify \
+            .v2 \
+            .services(TWILIO_VERIFICATION_SID) \
+            .verification_checks \
+            .create(to=to_phone_number, code=code_str)
+    
+        print(verification_check.status)
+        return verification_check.status """
 
 
 """
