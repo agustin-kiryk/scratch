@@ -2,7 +2,7 @@ import bcrypt
 import json
 import secrets
 
-from flask import request, Response, jsonify
+from flask import request, Response, jsonify, current_app
 from flask_jwt_extended import create_access_token
 
 from src.client.Twilio_client import send_verification_sms, verify_sms
@@ -144,21 +144,19 @@ def handle_step_1(data):
 def handle_step_2(data):
     phone_number = data.get('phone_number')
     sms_code = data.get('sms_code')
-    print(sms_code)
 
-    if verify_sms(phone_number, sms_code):
-        email_verification_code = ''.join(secrets.choice('0123456789') for _ in range(6))
-        temp_user = mongo.db.temp_users.find_one_and_update(
-            {'phone_number': phone_number},
-            {'$set': {'phone_verified': True, 'email_verification_code': email_verification_code}}
-        )
-        send_verification_email(temp_user['email'], email_verification_code)
-        response_data = json.dumps({'message': 'Phone verified, email verification code sent'})
+    if not phone_number or not sms_code:
+        response_data = json.dumps({'error': 'Phone number and SMS code are required'})
+        return Response(response_data, status=400, mimetype='application/json')
+
+    if verify_sms(phone_number, str(sms_code)):
+        email_verification_code = generate_pin()  # Genera un código de verificación para el email
+        send_verification_email(data['email'], email_verification_code)
+        response_data = json.dumps({'message': 'SMS verified and email sent'})
         return Response(response_data, status=200, mimetype='application/json')
     else:
         response_data = json.dumps({'error': 'Invalid SMS code'})
         return Response(response_data, status=400, mimetype='application/json')
-
 
 def handle_step_3(data):
     user_email = data.get('email')
