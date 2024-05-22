@@ -41,8 +41,6 @@ def register_new_user():
         return Response(response_data, status=500, mimetype='application/json')
 
 
-
-
 def generate_pin():
     return ''.join(secrets.choice('0123456789') for _ in range(4))
 
@@ -64,8 +62,8 @@ def test_login():
     existing_user = mongo.db.users.find_one({'email': data.get('email')})
 
     if existing_user:
-        stored_pin = existing_user.get('pin')
-        if stored_pin and verify_pin(data.get('pin'), stored_pin):
+        stored_password = existing_user.get('password')
+        if stored_password and verify_password(data.get('password'), stored_password):
             access_token = create_access_token(identity=str(existing_user['_id']))
             return jsonify(access_token=access_token), 200
         return Response(json.dumps({'error': 'Invalid credentials'}), status=401, mimetype='application/json')

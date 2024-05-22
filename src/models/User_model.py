@@ -24,7 +24,7 @@ class User:
             'points': self.points,
             'status': self.status,
             'pin': self.pin,
-            'password': self.password  # Incluye password si es necesario
+            'password': self.password
         }
 
     @staticmethod
