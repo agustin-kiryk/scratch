@@ -1,10 +1,10 @@
 import smtplib
 import ssl
 
-smtp_server = "smtp.mail.yahoo.com"
-port = 465  # For starttls
-sender_email = "agustin.krk@yahoo.com"
-password = "Bautista19.!"
+smtp_server = 'smtp.gmail.com'
+port = 587  # For starttls
+sender_email = 'agustin.k.dsi@gmail.com'
+password = 'umpipenwtftfpxjl'
 
 # Create a secure SSL context
 context = ssl.create_default_context()

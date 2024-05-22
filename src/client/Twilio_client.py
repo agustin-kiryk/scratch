@@ -24,8 +24,7 @@ def send_verification_sms(to_phone_number):
 
 
 def verify_sms(to_phone_number, code):
-    return 'aprove'
-"""    
+
         code_str = str(code)
         verification_check = client.verify \
             .v2 \
@@ -34,7 +33,7 @@ def verify_sms(to_phone_number, code):
             .create(to=to_phone_number, code=code_str)
     
         print(verification_check.status)
-        return verification_check.status """
+        return verification_check.status
 
 
 """

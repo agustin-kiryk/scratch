@@ -9,6 +9,7 @@ from src.client.Twilio_client import send_verification_sms, verify_sms
 from src.config.mongodb import mongo
 from src.models.User_model import User
 from src.client.Flask_mail_client import send_verification_email, verify_email_code
+from datetime import datetime
 
 
 def register_new_user():
@@ -40,33 +41,6 @@ def register_new_user():
         return Response(response_data, status=500, mimetype='application/json')
 
 
-def build_new_user(data, pin):
-    new_user = User(
-        id=None,
-        name=data.get('name', None),
-        lastName=data.get('lastName', None),
-        document=data.get('document', None),
-        email=data.get('email', None),
-        points=data.get('points', 0),
-        status=1,  # Opcional: asignar un estado por defecto
-        pin=pin
-    )
-    return new_user
-
-
-def build_response(new_user, result):
-    user_id = str(result.inserted_id)
-    user_data = {
-        'id': user_id,
-        'name': new_user.name,
-        'lastName': new_user.lastName,
-        'document': new_user.document,
-        'email': new_user.email,
-        'points': new_user.points,
-        'status': new_user.status,
-        'pin': new_user.pin
-    }
-    return user_data
 
 
 def generate_pin():
@@ -133,7 +107,8 @@ def handle_step_1(data):
         'email': user_email,
         'password': data.get('password'),
         'phone_number': phone_number,
-        'phone_verified': False
+        'phone_verified': False,
+        'created_at': datetime.utcnow()
     }
     mongo.db.temp_users.insert_one(temp_user)
 
@@ -152,11 +127,17 @@ def handle_step_2(data):
     if verify_sms(phone_number, str(sms_code)):
         email_verification_code = generate_pin()  # Genera un código de verificación para el email
         send_verification_email(data['email'], email_verification_code)
-        response_data = json.dumps({'message': 'SMS verified and email sent'})
+        mongo.db.temp_users.update_one(
+            {'phone_number': phone_number},
+            {'$set': {'phone_verified': True, 'email_verification_code': email_verification_code}}
+        )
+
+        response_data = json.dumps({'message': 'SMS verified and email verification code sent'})
         return Response(response_data, status=200, mimetype='application/json')
     else:
         response_data = json.dumps({'error': 'Invalid SMS code'})
         return Response(response_data, status=400, mimetype='application/json')
+
 
 def handle_step_3(data):
     user_email = data.get('email')
@@ -186,6 +167,35 @@ def handle_step_3(data):
 def hash_password(password):
     hashed_password_bytes = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
     return hashed_password_bytes.decode('utf-8')
+
+
+def build_new_user(temp_user, hashed_password):
+    new_user = User(
+        id=None,
+        name=temp_user['name'],
+        lastName=temp_user['lastName'],
+        document=temp_user['document'],
+        email=temp_user['email'],
+        points=0,
+        status=1,
+        pin=None,
+        password=hashed_password
+    )
+    return new_user
+
+
+def build_response(new_user, result):
+    user_id = str(result.inserted_id)
+    user_data = {
+        'id': user_id,
+        'name': new_user.name,
+        'lastName': new_user.lastName,
+        'document': new_user.document,
+        'email': new_user.email,
+        'points': new_user.points,
+        'status': new_user.status
+    }
+    return user_data
 
 
 def verify_password(provided_password, stored_password):
