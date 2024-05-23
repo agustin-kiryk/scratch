@@ -6,7 +6,7 @@ from flask import request, Response, jsonify, current_app
 from flask_jwt_extended import create_access_token
 
 from src.client.Twilio_client import send_verification_sms, verify_sms
-from src.config_proyect.mongodb import mongo
+from src.config.mongodb import mongo
 from src.models.User_model import User
 from src.client.Flask_mail_client import send_verification_email, verify_email_code
 from datetime import datetime

@@ -1,8 +1,8 @@
 from flask import Flask
 from flask_jwt_extended import JWTManager
 from flask_mail import Mail
-from config_proyect.mongodb import mongo
-from config_proyect.Email_config import Config
+from src.config.mongodb import mongo
+from src.config.Email_config import Config
 
 mail = Mail()
 
