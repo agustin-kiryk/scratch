@@ -10,6 +10,7 @@ from src.config.mongodb import mongo
 from src.models.User_model import User
 from src.client.Flask_mail_client import send_verification_email, verify_email_code
 from datetime import datetime
+from src.client.Paycaddy_client import create_user
 
 
 def register_new_user():
@@ -81,6 +82,8 @@ def register_new_user2():
         return handle_step_2(data)
     elif step == 3:
         return handle_step_3(data)
+    elif step == 4:
+        return handle_step_4(data)
     else:
         response_data = json.dumps({'error': 'Invalid step'})
         return Response(response_data, status=400, mimetype='application/json')
@@ -159,7 +162,37 @@ def handle_step_3(data):
             return Response(response_data, status=500, mimetype='application/json')
     else:
         response_data = json.dumps({'error': 'Invalid email code or phone not verified'})
-        return Response(response_data, status=400, mimetype='application/json')
+        return Response(response_data, status=400, mimetype='application/json');
+
+def handle_step_4(data):
+
+    required_fields = ["email", "firstName", "lastName", "occupation", "placeOfWork", "pep", "salary", "telephone", "address"]
+    if not all(field in data for field in required_fields):
+        response_data = json.dumps({'error': 'Missing required fields'})
+        return Response(response_data, status=400, mimetype='application/json' )
+    user_respone = create_user(data)
+    if 'id' not in user_respone:
+         response_data = json.dumps({"error": "Failed to create user in PayCaddy",'detail':user_respone.get('title')})
+         return Response(response_data,status=400, mimetype='application/json' );
+    response_data = json.dumps({
+        "id": user_respone['id'],
+        "firstName": data['firstName'],
+        "lastName": data['lastName'],
+        "email": data['email'],
+        "telephone": data['telephone'],
+        "placeOfWork": data['placeOfWork'],
+        "pep": data['pep'],
+        "salary": data['salary'],
+        "address": data['address'],
+        "isActive": False,
+        "walletId": user_respone.get('walletId', ''),
+        "kycUrl": user_respone.get('kycUrl', ''),
+        "creationDate": user_respone.get('creationDate', '')
+    })
+
+    return Response(response_data,status=200, mimetype='application/json' );
+
+
 
 
 def hash_password(password):
