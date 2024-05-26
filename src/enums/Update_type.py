@@ -1,0 +1,7 @@
+from enum import Enum
+
+
+class UpdateType(Enum):
+    UPDATE_ONLY_VALUES = 'UPDATE_ONLY_VALUES'
+    UPDATE_VALUES = 'UPDATE_VALUES'
+    UPDATE_AND_NULL_ALL = 'UPDATE_AND_NULL_ALL'

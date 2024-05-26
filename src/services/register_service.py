@@ -7,6 +7,8 @@ from flask_jwt_extended import create_access_token
 
 from src.client.Twilio_client import send_verification_sms, verify_sms
 from src.config.mongodb import mongo
+from src.enums.Kyc_enum import CardOrderKycStatus
+from src.models.Card_order import CardOrder
 from src.models.User_model import User
 from src.client.Flask_mail_client import send_verification_email, verify_email_code
 from datetime import datetime
@@ -135,18 +137,36 @@ def handle_step_3(data):
         response_data = json.dumps({'error': 'Invalid email code or phone not verified'})
         return Response(response_data, status=400, mimetype='application/json');
 
-def handle_step_4(data):
 
+def handle_step_4(data):
     required_fields = ["email", "firstName", "lastName", "occupation", "placeOfWork", "pep", "salary", "telephone", "address"]
     if not all(field in data for field in required_fields):
         response_data = json.dumps({'error': 'Missing required fields'})
-        return Response(response_data, status=400, mimetype='application/json' )
-    user_respone = create_user(data)
-    if 'id' not in user_respone:
-         response_data = json.dumps({"error": "Failed to create user in PayCaddy",'detail':user_respone.get('title')})
-         return Response(response_data,status=400, mimetype='application/json' );
-    response_data = json.dumps({
-        "id": user_respone['id'],
+        return Response(response_data, status=400, mimetype='application/json')
+    user_response = create_user(data);
+
+    if 'id' not in user_response:
+        response_data = json.dumps({"error": "Failed to create user in PayCaddy", 'detail': user_response.get('title')})
+        return Response(response_data, status=400, mimetype='application/json');
+
+    user_id = str(user_response['id'])
+
+    # Crear y almacenar el pedido de tarjeta
+    card_order = CardOrder(user_id=user_id, data=data)
+    card_order.walletId = user_response.get('walletId', '')
+    card_order.kycUrl = user_response.get('kycUrl', '')
+    card_order.creationDate = user_response.get('creationDate', '')
+    card_order.status = CardOrderKycStatus.PENDING.value
+
+    mongo.db.card_orders.insert_one(card_order.to_dict())
+    response_data = build_response_info_user_and_paycaddy(data, user_response)
+
+    return Response(response_data, status=200, mimetype='application/json');
+
+
+def build_response_info_user_and_paycaddy(data, user_response):
+    return json.dumps({
+        "id": user_response['id'],
         "firstName": data['firstName'],
         "lastName": data['lastName'],
         "email": data['email'],
@@ -156,14 +176,10 @@ def handle_step_4(data):
         "salary": data['salary'],
         "address": data['address'],
         "isActive": False,
-        "walletId": user_respone.get('walletId', ''),
-        "kycUrl": user_respone.get('kycUrl', ''),
-        "creationDate": user_respone.get('creationDate', '')
+        "walletId": user_response.get('walletId', ''),
+        "kycUrl": user_response.get('kycUrl', ''),
+        "creationDate": user_response.get('creationDate', '')
     })
-
-    return Response(response_data,status=200, mimetype='application/json');
-
-
 
 
 def hash_password(password):
