@@ -21,6 +21,9 @@ def create_app():
     app.register_blueprint(register_blueprint, url_prefix='/user')
     app.register_blueprint(auth_blueprint, url_prefix='/auth')
 
+    from src.routes.Webhook_paycaddy import webhook_paycaddy_blueprint
+    app.register_blueprint(webhook_paycaddy_blueprint, url_prefix='/webhook')
+
     @app.route('/')
     def index():
         return 'Hello world umpi penw tftf pxjl'

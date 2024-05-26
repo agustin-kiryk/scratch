@@ -190,7 +190,7 @@ def handle_step_4(data):
         "creationDate": user_respone.get('creationDate', '')
     })
 
-    return Response(response_data,status=200, mimetype='application/json' );
+    return Response(response_data,status=200, mimetype='application/json');
 
 
 
