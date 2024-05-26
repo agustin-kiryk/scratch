@@ -13,35 +13,6 @@ from datetime import datetime
 from src.client.Paycaddy_client import create_user
 
 
-def register_new_user():
-    data = request.get_json()
-
-    #Verificar si el usuario ya existe
-    user_email = data.get('email', None)
-    existing_user = mongo.db.users.find_one({'email': user_email})
-
-    if existing_user:
-        response_data = json.dumps({'error': 'User already exists'})
-        return Response(response_data, status=409, mimetype='application/json')
-
-    # Crear un objeto de usuario
-    gen_pin = generate_pin()
-    print('PIN GENERATED:', gen_pin)
-    encode_pin = hash_pin(gen_pin)
-    new_user = build_new_user(data, encode_pin)
-
-    # Insertar el nuevo usuario en la base de datos
-    result = mongo.db.users.insert_one(new_user.to_dict())
-
-    if result.inserted_id:
-        user_data = build_response(new_user, result)
-        response_data = json.dumps({'user': user_data})
-        return Response(response_data, status=200, mimetype='application/json')
-    else:
-        response_data = json.dumps({'error': 'Failed to register user'})
-        return Response(response_data, status=500, mimetype='application/json')
-
-
 def generate_pin():
     return ''.join(secrets.choice('0123456789') for _ in range(4))
 
