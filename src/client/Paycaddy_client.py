@@ -4,8 +4,9 @@ from dotenv import load_dotenv
 import requests
 
 load_dotenv()
-PAYCADDY_APY_KEY = os.getenv('PAYCADDY_APY_KEY')
+PAYCADDY_API_KEY = os.getenv('PAYCADDY_APY_KEY')
 BASE_URL = os.getenv('BASE_URL')
+
 
 def make_request(method, endpoint, data=None):
     url = f"{BASE_URL}{endpoint}"
@@ -33,15 +34,10 @@ def make_request(method, endpoint, data=None):
     except requests.exceptions.RequestException as req_err:
         return {"error": "Request exception occurred", "details": str(req_err)}
 
+
 def create_user(data):  #EndUser POST
     return make_request('POST', '/endUsers', data);
 
+
 def get_user(data):  #EndUser GET
     return make_request('GET', '/endUsers', data);
-
-
-
-
-
-
-

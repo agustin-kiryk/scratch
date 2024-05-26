@@ -1,5 +1,6 @@
 from datetime import datetime
 
+
 class TempUser:
     def __init__(self, email, phone_number, verification_code, email_verification_code):
         self.email = email
