@@ -6,6 +6,7 @@ from src.enums.Kyc_enum import CardOrderKycStatus
 class CardOrder:
     def __init__(self, user_id, data, status=CardOrderKycStatus):
         self.user_id = user_id
+        self.user_id_paycaddy = ''
         self.email = data['email']
         self.firstName = data['firstName']
         self.lastName = data['lastName']
@@ -15,7 +16,7 @@ class CardOrder:
         self.salary = data['salary']
         self.telephone = data['telephone']
         self.address = data['address']
-        self.status = status.value
+        self.status = status
         self.walletId = ''
         self.kycUrl = ''
         self.creationDate = datetime.utcnow()
@@ -23,6 +24,7 @@ class CardOrder:
     def to_dict(self):
         return {
             'user_id': self.user_id,
+            'user_id_paycaddy': self.user_id_paycaddy,
             'email': self.email,
             'firstName': self.firstName,
             'lastName': self.lastName,

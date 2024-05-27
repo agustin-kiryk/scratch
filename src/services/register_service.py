@@ -65,9 +65,14 @@ def register_new_user2():
 def handle_step_1(data):
     user_email = data.get('email')
     existing_user = mongo.db.users.find_one({'email': user_email})
+    existing_user_temp = mongo.db.temp_users.find_one({'email': user_email})
 
     if existing_user:
         response_data = json.dumps({'error': 'User already exists'})
+        return Response(response_data, status=409, mimetype='application/json')
+
+    if existing_user_temp:
+        response_data = json.dumps({'error': 'A user is trying to register with that email'})
         return Response(response_data, status=409, mimetype='application/json')
 
     phone_number = data.get('phone_number')
@@ -154,9 +159,11 @@ def handle_step_4(data):
     # Crear y almacenar el pedido de tarjeta
     card_order = CardOrder(user_id=user_id, data=data)
     card_order.walletId = user_response.get('walletId', '')
+    card_order.user_id_paycaddy = user_response.get('id', '')
     card_order.kycUrl = user_response.get('kycUrl', '')
     card_order.creationDate = user_response.get('creationDate', '')
     card_order.status = CardOrderKycStatus.PENDING.value
+
 
     mongo.db.card_orders.insert_one(card_order.to_dict())
     response_data = build_response_info_user_and_paycaddy(data, user_response)
@@ -189,7 +196,6 @@ def hash_password(password):
 
 def build_new_user(temp_user, hashed_password):
     new_user = User(
-        id=None,
         name=temp_user['name'],
         lastName=temp_user['lastName'],
         document=temp_user['document'],

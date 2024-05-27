@@ -18,7 +18,6 @@ def register_user_app():
     return response, 200
 
 
-
 @auth_blueprint.route('/login', methods=['POST'])
 def login_user_app():
     return test_login()
