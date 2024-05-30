@@ -8,7 +8,7 @@ from flask_jwt_extended import create_access_token
 from src.client.Twilio_client import send_verification_sms, verify_sms
 from src.config.mongodb import mongo
 from src.enums.Kyc_enum import CardOrderKycStatus
-from src.models.Card_order import CardOrder
+from src.models.card_order import CardOrder
 from src.models.User_model import User
 from src.client.Flask_mail_client import send_verification_email, verify_email_code
 from datetime import datetime
@@ -163,7 +163,6 @@ def handle_step_4(data):
     card_order.kycUrl = user_response.get('kycUrl', '')
     card_order.creationDate = user_response.get('creationDate', '')
     card_order.status = CardOrderKycStatus.PENDING.value
-
 
     mongo.db.card_orders.insert_one(card_order.to_dict())
     response_data = build_response_info_user_and_paycaddy(data, user_response)

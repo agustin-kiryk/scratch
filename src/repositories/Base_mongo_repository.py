@@ -1,7 +1,5 @@
 from bson.objectid import ObjectId
-
 from src.enums.Update_type import UpdateType
-
 
 class BaseRepository:
     def __init__(self, collection):
