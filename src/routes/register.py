@@ -1,7 +1,7 @@
 import json
 
 from flask import Blueprint, request, jsonify, Response
-from src.services.registration_service import RegistrationService
+from src.services.Registration_service import RegistrationService
 
 register_bp = Blueprint('registerUser', __name__)
 

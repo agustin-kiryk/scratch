@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify
-from src.services.register_service import test_login, register_new_user2
+from src.services.Register_service import test_login, register_new_user2
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 register_blueprint = Blueprint('register', __name__)
