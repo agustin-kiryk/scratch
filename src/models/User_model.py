@@ -16,12 +16,11 @@ class User(BaseModel):
     email: EmailStr
     points: int = 0
     status: int = 1
-    pin: Optional[str]
     password: str
     phoneVerified: bool
     email_verified: bool = False
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    update_at: datetime
+    update_at: datetime = Field(default_factory=datetime.utcnow)
 
     collection_name: str = 'users'  # Nombre de la colección
 
@@ -39,11 +38,9 @@ class User(BaseModel):
         data = self.dict(by_alias=True)
         if not include_all_fields:
             data = {k: v for k, v in data.items() if v is not None}
-        if not data.get("_id"):
-            data.pop("_id", None)
         return data
 
     @staticmethod
     def from_mongo_dict(data):
-        data["id"] = str(data.pop("_id", None))
+        data["id"] = str(data.pop("_id", ""))
         return User(**data)

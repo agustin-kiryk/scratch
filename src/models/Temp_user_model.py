@@ -20,6 +20,7 @@ class TempUser(BaseModel):
     phoneVerified: Optional[bool] = Field(default=False)
     email_verified: Optional[bool] = Field(default=False)
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at:Optional[datetime] = Field(default_factory=datetime.utcnow)
 
     class Config:
         arbitrary_types_allowed = True
