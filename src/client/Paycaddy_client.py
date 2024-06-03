@@ -35,9 +35,9 @@ def make_request(method, endpoint, data=None):
         return {"error": "Request exception occurred", "details": str(req_err)}
 
 
-def create_user(data):  #EndUser POST
+def create_user_paycaddy(data):  #EndUser POST
     return make_request('POST', '/endUsers', data);
 
 
-def get_user(data):  #EndUser GET
+def get_user_paycaddy(data):  #EndUser GET
     return make_request('GET', '/endUsers', data);

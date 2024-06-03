@@ -92,7 +92,6 @@ class RegistrationService:
                 try:
                     send_verification_email(email, email_verification_code)
                     temp_user.email_verification_code = email_verification_code
-                    temp_user.email_verification_code = 'chenge CODE XXXXXXXXXXXXXXXXXXXXXXXX'
                     temp_user_repo.update(temp_user)
                     response_data = {'message': 'Email verification code sent'}
                     return Response(json.dumps(response_data), status=200, mimetype='application/json')
@@ -104,15 +103,14 @@ class RegistrationService:
                 verification_status = verify_sms(phone_number, sms_code)
                 if verification_status == 'approved':
                     temp_user.phoneVerified = True
-                    temp_user.nationality = 'change desc'
                     email_verification_code = RegistrationService.generate_pin()
                     try:
                         send_verification_email(email, email_verification_code)
                         temp_user.email_verification_code = email_verification_code
                         print(f'Before update: {temp_user.phoneVerified}')  # Debugging line
                         temp_user_repo.update(temp_user)
-                        update_temp_user = temp_user_repo.find_by_email(email)
-                        print(f'After update: {update_temp_user.phoneVerified}')
+                        updated_temp_user = temp_user_repo.find_by_email(email)
+                        print(f'After update: {updated_temp_user.phoneVerified}')
 
                         response_data = {'message': 'SMS verified and email verification code sent'}
                         return Response(json.dumps(response_data), status=200, mimetype='application/json')
@@ -244,3 +242,4 @@ class RegistrationService:
             "kycUrl": user_response.get('kycUrl', ''),
             "creationDate": user_response.get('creationDate', '')
         })
+

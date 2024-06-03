@@ -2,20 +2,30 @@ from pydantic import BaseModel, EmailStr, Field, validator
 from bson import ObjectId
 from datetime import datetime
 from typing import Optional
+import bcrypt
 
 
 class User(BaseModel):
-    id: Optional[str] = Field(alias="_id")
+    id: Optional[str] = Field(None, alias="_id")
     name: str
     lastName: str
-    document: str
+    livePanama: bool
+    birthDate: str
+    nationality: str
+    phoneNumber: str
     email: EmailStr
     points: int = 0
     status: int = 1
     pin: Optional[str]
     password: str
+    phoneVerified: bool
+    email_verified: bool = False
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    update_at: datetime
 
-    @validator("name", "lastName", "document", "email", "password")
+    collection_name: str = 'users'  # Nombre de la colección
+
+    @validator("name", "lastName", "email", "password")
     def not_empty(cls, v):
         if not v or not v.strip():
             raise ValueError("Field cannot be empty")
@@ -25,8 +35,10 @@ class User(BaseModel):
         arbitrary_types_allowed = True
         json_encoders = {ObjectId: str}
 
-    def to_mongo_dict(self):
+    def to_mongo_dict(self, include_all_fields=True):
         data = self.dict(by_alias=True)
+        if not include_all_fields:
+            data = {k: v for k, v in data.items() if v is not None}
         if not data.get("_id"):
             data.pop("_id", None)
         return data

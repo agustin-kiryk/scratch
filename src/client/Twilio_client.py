@@ -2,6 +2,7 @@ import os
 import secrets
 from twilio.rest import Client
 from dotenv import load_dotenv
+from twilio.base.exceptions import TwilioRestException
 
 load_dotenv()
 TWILIO_ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID')
@@ -13,27 +14,34 @@ client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
 
 
 def send_verification_sms(to_phone_number):
-    verification = client.verify \
-        .v2 \
-        .services(TWILIO_VERIFICATION_SID) \
-        .verifications \
-        .create(to_phone_number, channel='sms')
+    try:
+        verification = client.verify \
+            .v2 \
+            .services(TWILIO_VERIFICATION_SID) \
+            .verifications \
+            .create(to=to_phone_number, channel='sms')
 
-    print(verification.status)
-    return verification.status
+        print(verification.status)
+        return verification.status
+    except TwilioRestException as e:
+        print(f"Error sending verification SMS: {e}")
+        return {'error': str(e), 'code': e.code, 'message': e.msg}
 
 
 def verify_sms(to_phone_number, code):
-
+    try:
         code_str = str(code)
         verification_check = client.verify \
             .v2 \
             .services(TWILIO_VERIFICATION_SID) \
             .verification_checks \
             .create(to=to_phone_number, code=code_str)
-    
+
         print(verification_check.status)
         return verification_check.status
+    except TwilioRestException as e:
+        print(f"Error verifying SMS code: {e}")
+        return {'error': str(e), 'code': e.code, 'message': e.msg}
 
 
 """

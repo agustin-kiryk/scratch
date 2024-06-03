@@ -4,6 +4,8 @@ from src.enums.Kyc_enum import CardOrderKycStatus
 
 
 class CardOrder:
+    collection_name: str = 'card_order'
+
     def __init__(self, user_id, data, status=CardOrderKycStatus):
         self.user_id = user_id
         self.user_id_paycaddy = ''
@@ -39,3 +41,16 @@ class CardOrder:
             'kycUrl': self.kycUrl,
             'creationDate': self.creationDate
         }
+
+    def to_mongo_dict(self, include_all_fields=True):
+        data = self.dict(by_alias=True)
+        if not include_all_fields:
+            data = {k: v for k, v in data.items() if v is not None}
+        if not data.get("_id"):
+            data.pop("_id", None)
+        return data
+
+    @staticmethod
+    def from_mongo_dict(data):
+        data["id"] = str(data.pop("_id", None))
+        return CardOrder(**data)

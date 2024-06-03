@@ -1,49 +1,41 @@
 from bson.objectid import ObjectId
-from src.enums.Update_type import UpdateType
+from pymongo.collection import Collection
+from pydantic import BaseModel
+from typing import Type, TypeVar, Generic, Optional
+from src.config.mongodb import mongo
 
-class BaseRepository:
-    def __init__(self, collection):
-        self.collection = collection
+T = TypeVar('T', bound=BaseModel)
 
-    def find_by_id(self, id):
-        return self.collection.find_one({"_id": ObjectId(id)})
+def get_collection_name(model_class: Type[BaseModel]) -> str:
+    return model_class.__name__.lower() + 's'  # Simple pluralization strategy
 
-    def find_all(self, filter=None):
-        filter = filter or {}
-        return self.collection.find(filter)
+class BaseRepository(Generic[T]):
+    def __init__(self, model: Type[T]):
+        self.model = model
+        collection_name = get_collection_name(model)
+        self.collection = mongo.db[collection_name]
 
-    def insert_one(self, document):
-        return self.collection.insert_one(document)
+    def find_by_id(self, id: str) -> Optional[T]:
+        data = self.collection.find_one({'_id': ObjectId(id)})
+        return self.model.from_mongo_dict(data) if data else None
 
-    def update_one(self, filter, update, update_type=UpdateType.UPDATE_ONLY_VALUES):
-        if update_type == UpdateType.UPDATE_ONLY_VALUES:
-            return self.collection.update_one(filter, {"$set": update})
-        elif update_type == UpdateType.UPDATE_VALUES:
-            existing_document = self.collection.find_one(filter)
-            if not existing_document:
-                return None
-            for key, value in update.items():
-                existing_document[key] = value
-            return self.collection.replace_one(filter, existing_document)
-        elif update_type == UpdateType.UPDATE_AND_NULL_ALL:
-            existing_document = self.collection.find_one(filter)
-            if not existing_document:
-                return None
-            for key in existing_document.keys():
-                if key not in update:
-                    update[key] = None
-            return self.collection.replace_one(filter, update)
-        else:
-            raise ValueError("Invalid update type specified")
+    def find_by_email(self, email: str) -> Optional[T]:
+        data = self.collection.find_one({'email': email})
+        return self.model.from_mongo_dict(data) if data else None
 
-    def delete_one(self, filter):
-        return self.collection.delete_one(filter)
+    def insert(self, document: T) -> str:
+        mongo_dict = document.to_mongo_dict()
+        # Remove `id` if it's None or empty to let MongoDB generate `_id`
+        if '_id' in mongo_dict and not mongo_dict['_id']:
+            del mongo_dict['_id']
+        result = self.collection.insert_one(mongo_dict)
+        return str(result.inserted_id)
 
-    def find_one(self, filter):
-        return self.collection.find_one(filter)
+    def update(self, document: T) -> None:
+        update_data = document.to_mongo_dict(include_all_fields=False)
+        # Ensure _id is not included in the update data
+        update_data.pop('_id', None)
+        self.collection.update_one({'_id': ObjectId(document.id)}, {'$set': update_data})
 
-    def update_by_id(self, id, update, update_type=UpdateType.UPDATE_ONLY_VALUES):
-        return self.update_one({"_id": ObjectId(id)}, update, update_type)
-
-    def delete_by_id(self, id):
-        return self.collection.delete_one({"_id": ObjectId(id)})
+    def delete_by_email(self, email: str) -> None:
+        self.collection.delete_one({'email': email})

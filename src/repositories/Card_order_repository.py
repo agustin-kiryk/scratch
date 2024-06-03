@@ -1,6 +1,11 @@
-class CardOrderRepository:
-    def __init__(self, db):
-        self.collection = db.card_orders
+from src.models.card_order import CardOrder
+from src.repositories.Base_mongo_repository import BaseRepository
+from src.config.mongodb import mongo
+
+
+class CardOrderRepository(BaseRepository[CardOrder]):
+    def __init__(self):
+        super().__init__(mongo.db.card_orde)
 
     def find_by_user_id(self, user_id):
         return self.collection.find_one({"user_id": user_id})

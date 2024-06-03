@@ -12,7 +12,7 @@ from src.models.card_order import CardOrder
 from src.models.User_model import User
 from src.client.Flask_mail_client import send_verification_email, verify_email_code
 from datetime import datetime
-from src.client.Paycaddy_client import create_user
+from src.client.Paycaddy_client import create_user_paycaddy
 
 
 def generate_pin():
@@ -148,7 +148,7 @@ def handle_step_4(data):
     if not all(field in data for field in required_fields):
         response_data = json.dumps({'error': 'Missing required fields'})
         return Response(response_data, status=400, mimetype='application/json')
-    user_response = create_user(data);
+    user_response = create_user_paycaddy(data);
 
     if 'id' not in user_response:
         response_data = json.dumps({"error": "Failed to create user in PayCaddy", 'detail': user_response.get('title')})
