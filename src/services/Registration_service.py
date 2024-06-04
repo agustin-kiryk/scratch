@@ -6,6 +6,7 @@ from src.client.Twilio_client import send_verification_sms, verify_sms
 from src.client.Flask_mail_client import send_verification_email, verify_email_code
 from src.client.Paycaddy_client import create_user_paycaddy
 from src.enums.Kyc_enum import CardOrderKycStatus
+from src.models.PaycaddyUser import PayCaddyAddress, PayCaddyUser
 from src.models.card_order import CardOrder
 from src.models.User_model import User
 from src.models.Temp_user_model import TempUser
@@ -154,32 +155,77 @@ class RegistrationService:
             response_data = {'error': 'Invalid email code or phone not verified'}
             return Response(json.dumps(response_data), status=400, mimetype='application/json')
 
+    
     @staticmethod
     def handle_step_4(data):
         required_fields = ["email", "firstName", "lastName", "occupation", "placeOfWork", "pep", "salary", "telephone", "address"]
-        if not all(field in data for field in required_fields):
-            response_data = {'error': 'Missing required fields'}
+        missing_fields = [field for field in required_fields if field not in data]
+        if missing_fields:
+            response_data = {'error': f'Missing required fields: {", ".join(missing_fields)}'}
             return Response(json.dumps(response_data), status=400, mimetype='application/json')
 
-        user_response = create_user_paycaddy(data)
+        try:
+            # Validar y filtrar los datos recibidos utilizando el modelo de Pydantic
+            address_data = data.get('address')
+            address = PayCaddyAddress(
+                addressLine1=address_data['addressLine1'],
+                addressLine2=address_data.get('addressLine2'),
+                homeNumber=address_data.get('homeNumber'),
+                city=address_data['city'],
+                region=address_data['region'],
+                postalCode=address_data['postalCode'],
+                country=address_data['country']
+            )
+            user_data = PayCaddyUser(
+                email=data['email'],
+                firstName=data['firstName'],
+                lastName=data['lastName'],
+                occupation=data['occupation'],
+                placeOfWork=data['placeOfWork'],
+                pep=data['pep'],
+                salary=data['salary'],
+                telephone=data['telephone'],
+                address=address
+            )
+        except ValidationError as e:
+            response_data = {'error': 'Invalid data', 'detail': e.errors()}
+            return Response(json.dumps(response_data), status=400, mimetype='application/json')
 
-        if 'id' not in user_response:
-            response_data = {"error": "Failed to create user in PayCaddy", 'detail': user_response.get('title')}
+        try:
+            user_response = create_user_paycaddy(user_data.dict())
+        except Exception as e:
+            response_data = {"error": "Failed to create user in PayCaddy", 'detail': str(e)}
+            return Response(json.dumps(response_data), status=500, mimetype='application/json')
+
+        if 'error' in user_response:
+            response_data = {"error": "Failed to create user in PayCaddy", 'detail': user_response.get('error')}
             return Response(json.dumps(response_data), status=400, mimetype='application/json')
 
         user_id = str(user_response['id'])
 
-        card_order = CardOrder(user_id=user_id, data=data)
-        card_order.walletId = user_response.get('walletId', '')
-        card_order.user_id_paycaddy = user_response.get('id', '')
-        card_order.kycUrl = user_response.get('kycUrl', '')
-        card_order.creationDate = user_response.get('creationDate', '')
-        card_order.status = CardOrderKycStatus.PENDING.value
+        card_order = CardOrder(
+            user_id=user_id,
+            user_id_paycaddy=user_response.get('id', ''),
+            email=data['email'],
+            firstName=data['firstName'],
+            lastName=data['lastName'],
+            occupation=data['occupation'],
+            placeOfWork=data['placeOfWork'],
+            pep=data['pep'],
+            salary=int(data['salary']),
+            telephone=data['telephone'],
+            address=data['address'],
+            status=CardOrderKycStatus.PENDING.value,
+            walletId=user_response.get('walletId', ''),
+            kycUrl=user_response.get('kycUrl', ''),
+            creationDate=user_response.get('creationDate', ''),
+            pdfDocument=data.get('pdfDocument') 
+        )
 
-        mongo.db.card_orders.insert_one(card_order.to_dict())
+        mongo.db.card_orders.insert_one(card_order.to_mongo_dict())
         response_data = RegistrationService.build_response_info_user_and_paycaddy(data, user_response)
 
-        return Response(json.dumps(response_data), status=200, mimetype='application/json')
+        return Response(response_data, status=200, mimetype='application/json')
 
     @staticmethod
     def generate_pin():
@@ -242,4 +288,3 @@ class RegistrationService:
             "kycUrl": user_response.get('kycUrl', ''),
             "creationDate": user_response.get('creationDate', '')
         })
-
