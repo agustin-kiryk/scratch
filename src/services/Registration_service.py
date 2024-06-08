@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 
 from flask import Response
+from src.ApiResponse import ApiResponse
 from src.client.Twilio_client import send_verification_sms, verify_sms
 from src.client.Flask_mail_client import send_verification_email, verify_email_code
 from src.client.Paycaddy_client import create_user_paycaddy
@@ -39,20 +40,10 @@ class RegistrationService:
 
         if existing_user or existing_temp_user:
             response_data = {'error': 'User already exists' if existing_user else 'A user is trying to register with that email'}
-            return Response(json.dumps(response_data), status=409, mimetype='application/json')
-
-        phone_number = data.get('phone_number')
-
-        sms_result = send_verification_sms(phone_number)
-        if isinstance(sms_result, dict) and 'error' in sms_result:
-            response_data = {
-                'error': 'Failed to send verification SMS.',
-                'detail': sms_result
-            }
-            return Response(json.dumps(response_data), status=400, mimetype='application/json')
+           # return Response(json.dumps(response_data), status=409, mimetype='application/json')
+            return ApiResponse(message='User already exists' if existing_user else 'A user is trying to register with that email', code=409).to_response()
 
         hashed_password = RegistrationService.hash_password(data.get('password'))
-
         try:
             temp_user = TempUser(
                 name=data.get('name'),
@@ -67,9 +58,20 @@ class RegistrationService:
             )
         except ValidationError as e:
             response_data = {'error': 'Invalid data', 'detail': e.errors()}
-            return Response(json.dumps(response_data), status=400, mimetype='application/json')
-
+            return ApiResponse(message= response_data,code=400).to_response()
+        
         temp_user_repo.insert(temp_user)
+        
+        phone_number = data.get('phone_number')
+
+        sms_result = send_verification_sms(phone_number)
+        
+        if isinstance(sms_result, dict) and 'error' in sms_result:
+            response_data = {
+                'error': 'Failed to send verification SMS.',
+                'detail': sms_result
+            }
+            return Response(json.dumps(response_data), status=400, mimetype='application/json')
 
         response_data = {'message': 'SMS verification code sent'}
         return Response(json.dumps(response_data), status=200, mimetype='application/json')
