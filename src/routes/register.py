@@ -2,6 +2,7 @@ import json
 
 from flask import Blueprint, request, jsonify, Response
 from src.services.Registration_service import RegistrationService
+from src.ApiResponse import ApiResponse
 
 register_bp = Blueprint('registerUser', __name__)
 
@@ -19,5 +20,4 @@ def register_user():
     elif step == 4:
         return RegistrationService.handle_step_4(data)
     else:
-        response_data = {'error': 'Invalid step'}
-        return Response(json.dumps(response_data), status=400, mimetype='application/json')
+        return ApiResponse(message='Invalid step',code=400).to_response()

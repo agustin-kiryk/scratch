@@ -40,8 +40,7 @@ class RegistrationService:
 
         if existing_user or existing_temp_user:
             response_data = {'error': 'User already exists' if existing_user else 'A user is trying to register with that email'}
-           # return Response(json.dumps(response_data), status=409, mimetype='application/json')
-            return ApiResponse(message='User already exists' if existing_user else 'A user is trying to register with that email', code=409).to_response()
+            return ApiResponse(message='User already exists' if existing_user else 'A user is trying to register with that email', code=409, data=existing_user).to_response()
 
         hashed_password = RegistrationService.hash_password(data.get('password'))
         try:

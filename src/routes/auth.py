@@ -8,7 +8,6 @@ auth_blueprint = Blueprint('auth', __name__)
 
 @register_blueprint.route('/', methods=['GET'])
 def get_users():
-    # Aquí deberías implementar la lógica para obtener todos los usuarios
     return 'get all users'
 
 
