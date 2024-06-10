@@ -7,7 +7,7 @@ from src.config.mongodb import mongo
 T = TypeVar('T', bound=BaseModel)
 
 def get_collection_name(model_class: Type[BaseModel]) -> str:
-    return model_class.__name__.lower() + 's'  # Simple pluralization strategy
+    return model_class.__name__.lower() + 's' 
 
 class BaseRepository(Generic[T]):
     def __init__(self, model: Type[T]):
@@ -36,6 +36,12 @@ class BaseRepository(Generic[T]):
         # Ensure _id is not included in the update data
         update_data.pop('_id', None)
         self.collection.update_one({'_id': ObjectId(document.id)}, {'$set': update_data})
+        
+        
+    def update_by_id(self, id: str, update_data: dict) -> None:
+        # Ensure _id is not included in the update data
+        update_data.pop('_id', None)
+        self.collection.update_one({'_id': ObjectId(id)}, {'$set': update_data})
 
     def delete_by_email(self, email: str) -> None:
         self.collection.delete_one({'email': email})
