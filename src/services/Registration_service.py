@@ -17,6 +17,8 @@ import bcrypt
 import secrets
 from src.config.mongodb import mongo
 from pydantic import Field, ValidationError
+from src.models.FinancialInfo import FinancialInfo
+from src.repositories.Financial_Info_repository import FinancialInfoRepository
 
 
 class RegistrationService:
@@ -42,6 +44,7 @@ class RegistrationService:
             response_data = {'error': 'User already exists' if existing_user else 'A user is trying to register with that email'}
             return ApiResponse(message='User already exists' if existing_user else 'A user is trying to register with that email', code=409, data=existing_user).to_response()
 
+        phone_number = data.get('phone_number')
         hashed_password = RegistrationService.hash_password(data.get('password'))
         try:
             temp_user = TempUser(
@@ -60,8 +63,8 @@ class RegistrationService:
             return ApiResponse(message= response_data,code=400).to_response()
         
         temp_user_repo.insert(temp_user)
+        new_temp_user= temp_user_repo.find_by_email(user_email)
         
-        phone_number = data.get('phone_number')
 
         sms_result = send_verification_sms(phone_number)
         
@@ -73,7 +76,8 @@ class RegistrationService:
             return Response(json.dumps(response_data), status=400, mimetype='application/json')
 
         response_data = {'message': 'SMS verification code sent'}
-        return Response(json.dumps(response_data), status=200, mimetype='application/json')
+       # return Response(json.dumps(response_data), status=200, mimetype='application/json')
+        return ApiResponse(data=new_temp_user.to_mongo_dict(), code=200,message='SMS verification code sent').to_response()
 
     @staticmethod
     def handle_step_2(data):
@@ -143,10 +147,20 @@ class RegistrationService:
             new_user = RegistrationService.build_new_user(temp_user, temp_user.password)
 
             result = user_repo.insert(new_user)
+            new_user_id = str(result)
 
+            # Crear la información financiera básica para el usuario
+            financial_info_user = RegistrationService.build_financial_info_user(new_user_id)
+            financial_info_repo = FinancialInfoRepository()
+            financial_info_id = financial_info_repo.insert(financial_info_user)
+
+        # Actualizar el usuario con la referencia a la información financiera
+            user_repo.update_by_id(new_user_id, {'financial_info_id': financial_info_id})
+        
+        
             if result:
                 user_data = RegistrationService.build_response(new_user, result)
-                temp_user_repo.delete_by_email(user_email)
+               # temp_user_repo.delete_by_email(user_email)
                 response_data = {'user': user_data}
                 return Response(json.dumps(response_data), status=200, mimetype='application/json')
             else:
@@ -289,3 +303,10 @@ class RegistrationService:
             "kycUrl": user_response.get('kycUrl', ''),
             "creationDate": user_response.get('creationDate', '')
         })
+        
+    @staticmethod
+    def build_financial_info_user(user_id: str) -> FinancialInfo:
+        return FinancialInfo(
+        user_id=user_id
+    )
+         

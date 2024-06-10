@@ -21,6 +21,7 @@ class User(BaseModel):
     email_verified: bool = False
     created_at: datetime = Field(default_factory=datetime.utcnow)
     update_at: datetime = Field(default_factory=datetime.utcnow)
+    financial_info_id: Optional[str] = None  # Referencia a la información financiera
 
     collection_name: str = 'users'  # Nombre de la colección
 
