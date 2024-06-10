@@ -10,6 +10,7 @@ mail = Mail()
 
 def create_app():
     app = Flask(__name__)
+    app.json.sort_keys = False
     app.config.from_object(Config)
 
     # Inicialización de Flask-Mail
@@ -25,6 +26,9 @@ def create_app():
 
     from src.routes.Webhook_paycaddy import webhook_paycaddy_blueprint
     app.register_blueprint(webhook_paycaddy_blueprint, url_prefix='/webhook')
+    
+    from src.routes.FinancialInfoRoute import financial_bp
+    app.register_blueprint(financial_bp, url_prefix='/api')
 
     @app.route('/')
     def index():
