@@ -38,9 +38,6 @@ def teardown_request(exception=None):
     g.pop("request_id", None)
     
     
-@app.route('/')
-def index():
-    return jsonify({"Choo Choo": "Welcome to your Flask app 🚅"})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
