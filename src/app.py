@@ -37,7 +37,6 @@ def attach_request_id(response):
 def teardown_request(exception=None):
     g.pop("request_id", None)
     
-    
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
