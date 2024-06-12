@@ -9,7 +9,7 @@ from werkzeug.exceptions import HTTPException
 # Añadir el directorio src al path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from src import ApiResponse
+from src.Api_response import ApiResponse
 from src.App_factory import create_app
 from src.error_handler import JSONErrorHandler
 
