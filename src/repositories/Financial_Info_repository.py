@@ -1,4 +1,4 @@
-from src.models.FinancialInfo import FinancialInfo
+from src.models.Financial_info import FinancialInfo
 from src.repositories.Base_mongo_repository import BaseRepository
 
 
