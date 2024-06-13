@@ -17,7 +17,7 @@ import bcrypt
 import secrets
 from src.config.mongodb import mongo
 from pydantic import Field, ValidationError
-from src.models.FinancialInfo import FinancialInfo
+from src.models.Financial_info import FinancialInfo
 from src.repositories.Financial_Info_repository import FinancialInfoRepository
 
 
