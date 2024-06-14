@@ -45,3 +45,5 @@ class User(BaseModel):
     def from_mongo_dict(data):
         data["id"] = str(data.pop("_id", ""))
         return User(**data)
+    
+       

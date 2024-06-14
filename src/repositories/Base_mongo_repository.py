@@ -18,6 +18,7 @@ class BaseRepository(Generic[T]):
     def find_by_id(self, id: str) -> Optional[T]:
         data = self.collection.find_one({'_id': ObjectId(id)})
         return self.model.from_mongo_dict(data) if data else None
+    
 
     def find_by_email(self, email: str) -> Optional[T]:
         data = self.collection.find_one({'email': email})
@@ -45,3 +46,9 @@ class BaseRepository(Generic[T]):
 
     def delete_by_email(self, email: str) -> None:
         self.collection.delete_one({'email': email})
+        
+    def delete_by_id(self, id: str) -> None:
+        self.collection.delete_one({'_id': ObjectId(id)})
+        
+    def find_all(self) -> list[T]:
+       return [self.model.from_mongo_dict(doc) for doc in self.collection.find()]
