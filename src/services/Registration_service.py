@@ -31,7 +31,7 @@ class RegistrationService:
         missing_fields = [field for field in required_fields if field not in data]
         if missing_fields:
             response_data = {'error': f'Missing required fields: {", ".join(missing_fields)}'}
-            return Response(json.dumps(response_data), status=400, mimetype='application/json')
+            return ApiResponse(message='Missing required fields', code=409, data=missing_fields).to_response()
 
         user_email = data.get('email')
         user_repo = UserRepository()
@@ -73,7 +73,7 @@ class RegistrationService:
                 'error': 'Failed to send verification SMS.',
                 'detail': sms_result
             }
-            return Response(json.dumps(response_data), status=400, mimetype='application/json')
+            return ApiResponse(message='Failed to send verification SMS.', code=409, data=sms_result).to_response()
 
         response_data = {'message': 'SMS verification code sent'}
        # return Response(json.dumps(response_data), status=200, mimetype='application/json')
@@ -86,24 +86,25 @@ class RegistrationService:
         email = data.get('email')
 
         if not phone_number or not sms_code:
-            response_data = {'error': 'Phone number and SMS code are required'}
-            return Response(json.dumps(response_data), status=400, mimetype='application/json')
+            return ApiResponse(code=400, message='Phone number and SMS code are required', data={'step': 2}).to_response()
+
         temp_user_repo = TempUserRepository()
         temp_user = temp_user_repo.find_by_email(email)
 
         if temp_user:
-            if temp_user.phoneVerified:
+            if temp_user.phoneVerified and temp_user.email_verified:
+                return ApiResponse(code=400, message= "User is verified phone and email" , data= {'step': 2, 'tempUser':temp_user.to_mongo_dict()}).to_response()
+            
+            if temp_user.phoneVerified and not temp_user.email_verified:
                 # Si el teléfono ya está verificado, solo envía el código de verificación por email
                 email_verification_code = RegistrationService.generate_pin()
                 try:
                     send_verification_email(email, email_verification_code)
                     temp_user.email_verification_code = email_verification_code
                     temp_user_repo.update(temp_user)
-                    response_data = {'message': 'Email verification code sent'}
-                    return Response(json.dumps(response_data), status=200, mimetype='application/json')
+                    return ApiResponse(message='Email verification code sent', code=200, data={'step': 2}).to_response()
                 except Exception as e:
-                    response_data = {'error': f'Failed to send verification email: {str(e)}'}
-                    return Response(json.dumps(response_data), status=500, mimetype='application/json')
+                    return ApiResponse(message='Failed to send verification email', code=500, data={'step': 2, 'error': str(e)}).to_response()
             else:
                 # Verifica el estado de la verificación del SMS
                 verification_status = verify_sms(phone_number, sms_code)
@@ -113,23 +114,18 @@ class RegistrationService:
                     try:
                         send_verification_email(email, email_verification_code)
                         temp_user.email_verification_code = email_verification_code
-                        print(f'Before update: {temp_user.phoneVerified}')  # Debugging line
                         temp_user_repo.update(temp_user)
                         updated_temp_user = temp_user_repo.find_by_email(email)
-                        print(f'After update: {updated_temp_user.phoneVerified}')
 
-                        response_data = {'message': 'SMS verified and email verification code sent'}
-                        return Response(json.dumps(response_data), status=200, mimetype='application/json')
+                        return ApiResponse(message='SMS verified and email verification code sent', code=200, data={'step': 2}).to_response()
                     except Exception as e:
-                        response_data = {'error': f'Failed to send verification email: {str(e)}'}
-                        return Response(json.dumps(response_data), status=500, mimetype='application/json')
+                        return ApiResponse(message='Failed to send verification email', code=500, data={'step': 2, 'error': str(e)}).to_response()
                 else:
-                    response_data = {'error': 'Invalid SMS code or verification not approved'}
-                    return Response(json.dumps(response_data), status=400, mimetype='application/json')
+                    return ApiResponse(message='Invalid SMS code or verification not approved', code=400, data={'step': 2}).to_response()
         else:
-            response_data = {'error': 'Temporary user not found'}
-            return Response(json.dumps(response_data), status=404, mimetype='application/json')
-
+            return ApiResponse(message='Temporary user not found', code=404, data={'step': 2}).to_response()
+    
+    
     @staticmethod
     def handle_step_3(data):
         user_email = data.get('email')
@@ -154,21 +150,20 @@ class RegistrationService:
             financial_info_repo = FinancialInfoRepository()
             financial_info_id = financial_info_repo.insert(financial_info_user)
 
-        # Actualizar el usuario con la referencia a la información financiera
+            # Actualizar el usuario con la referencia a la información financiera
             user_repo.update_by_id(new_user_id, {'financial_info_id': financial_info_id})
-        
-        
+
             if result:
                 user_data = RegistrationService.build_response(new_user, result)
-               # temp_user_repo.delete_by_email(user_email)
-                response_data = {'user': user_data}
-                return Response(json.dumps(response_data), status=200, mimetype='application/json')
+                response_data = {'user': user_data, 'step': 3}
+                return ApiResponse(data=response_data, code=200, message='User registered successfully').to_response()
             else:
-                response_data = {'error': 'Failed to register user'}
-                return Response(json.dumps(response_data), status=500, mimetype='application/json')
+                response_data = {'step': 3, 'error': 'Failed to register user'}
+                return ApiResponse(data=response_data, code=500, message='Failed to register user').to_response()
         else:
-            response_data = {'error': 'Invalid email code or phone not verified'}
-            return Response(json.dumps(response_data), status=400, mimetype='application/json')
+            response_data = {'step': 3, 'error': 'Invalid email code or phone not verified'}
+            return ApiResponse(data=response_data, code=400, message='Invalid email code or phone not verified').to_response()
+
 
     
     @staticmethod
@@ -176,8 +171,8 @@ class RegistrationService:
         required_fields = ["email", "firstName", "lastName", "occupation", "placeOfWork", "pep", "salary", "telephone", "address"]
         missing_fields = [field for field in required_fields if field not in data]
         if missing_fields:
-            response_data = {'error': f'Missing required fields: {", ".join(missing_fields)}'}
-            return Response(json.dumps(response_data), status=400, mimetype='application/json')
+            response_data = {'step': 4, 'error': f'Missing required fields: {", ".join(missing_fields)}'}
+            return ApiResponse(data=response_data, code=400, message='Missing required fields').to_response()
 
         try:
             # Validar y filtrar los datos recibidos utilizando el modelo de Pydantic
@@ -203,18 +198,18 @@ class RegistrationService:
                 address=address
             )
         except ValidationError as e:
-            response_data = {'error': 'Invalid data', 'detail': e.errors()}
-            return Response(json.dumps(response_data), status=400, mimetype='application/json')
+            response_data = {'step': 4, 'error': 'Invalid data', 'detail': e.errors()}
+            return ApiResponse(data=response_data, code=400, message='Invalid data').to_response()
 
         try:
             user_response = create_user_paycaddy(user_data.dict())
         except Exception as e:
-            response_data = {"error": "Failed to create user in PayCaddy", 'detail': str(e)}
-            return Response(json.dumps(response_data), status=500, mimetype='application/json')
+            response_data = {'step': 4, 'error': 'Failed to create user in PayCaddy', 'detail': str(e)}
+            return ApiResponse(data=response_data, code=500, message='Failed to create user in PayCaddy').to_response()
 
         if 'error' in user_response:
-            response_data = {"error": "Failed to create user in PayCaddy", 'detail': user_response.get('error')}
-            return Response(json.dumps(response_data), status=400, mimetype='application/json')
+            response_data = {'step': 4, 'error': 'Failed to create user in PayCaddy', 'detail': user_response.get('error')}
+            return ApiResponse(data=response_data, code=400, message='Failed to create user in PayCaddy').to_response()
 
         user_id = str(user_response['id'])
 
@@ -234,13 +229,14 @@ class RegistrationService:
             walletId=user_response.get('walletId', ''),
             kycUrl=user_response.get('kycUrl', ''),
             creationDate=user_response.get('creationDate', ''),
-            pdfDocument=data.get('pdfDocument') 
+            pdfDocument=data.get('pdfDocument')
         )
 
         mongo.db.card_orders.insert_one(card_order.to_mongo_dict())
         response_data = RegistrationService.build_response_info_user_and_paycaddy(data, user_response)
+        response_data['step'] = 4
 
-        return Response(response_data, status=200, mimetype='application/json')
+        return ApiResponse(data=response_data, code=200, message='User registered successfully pending kyc').to_response()
 
     @staticmethod
     def generate_pin():
