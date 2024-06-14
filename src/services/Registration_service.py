@@ -305,4 +305,34 @@ class RegistrationService:
         return FinancialInfo(
         user_id=user_id
     )
+        
+    @staticmethod
+    def resend_sms_verification(email):
+        temp_user_repo = TempUserRepository()
+        temp_user = temp_user_repo.find_by_email(email)
+        if not temp_user:
+            return ApiResponse(message='Temporary user not found', code=404).to_response()
+
+        phone_number = temp_user.phoneNumber
+        sms_result = send_verification_sms(phone_number)
+        if isinstance(sms_result, dict) and 'error' in sms_result:
+            return ApiResponse(message='Failed to send verification SMS', code=500, data=sms_result).to_response()
+
+        return ApiResponse(message= 'Verification SMS sent successfully', code=200).to_response()
+    
+    @staticmethod
+    def resend_email_verification(email):
+        temp_user_repo = TempUserRepository()
+        temp_user = temp_user_repo.find_by_email(email)
+        if not temp_user:
+            return ApiResponse(message='Temporary user not found', code=404).to_response()
+
+        email_verification_code = RegistrationService.generate_pin()
+        try:
+            send_verification_email(email, email_verification_code)
+            temp_user.email_verification_code = email_verification_code
+            temp_user_repo.update(temp_user)
+            return ApiResponse(message='Email verification code sent', code=200, data={'step': 2}).to_response()
+        except Exception as e:
+                return ApiResponse(message='Failed to send verification email', code=500, data={'step': 2, 'error': str(e)}).to_response()
          
