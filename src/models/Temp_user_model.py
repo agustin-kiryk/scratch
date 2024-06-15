@@ -21,6 +21,7 @@ class TempUser(BaseModel):
     email_verified: Optional[bool] = Field(default=False)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at:Optional[datetime] = Field(default_factory=datetime.utcnow)
+    role: str = "user"
 
     class Config:
         arbitrary_types_allowed = True

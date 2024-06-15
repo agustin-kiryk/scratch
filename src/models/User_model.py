@@ -22,8 +22,9 @@ class User(BaseModel):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     update_at: datetime = Field(default_factory=datetime.utcnow)
     financial_info_id: Optional[str] = None  # Referencia a la información financiera
+    role: str = "user"
 
-    collection_name: str = 'users'  # Nombre de la colección
+    collection_name: str = 'users' 
 
     @validator("name", "lastName", "email", "password")
     def not_empty(cls, v):

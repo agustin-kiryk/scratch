@@ -1,6 +1,6 @@
 from flask import Blueprint, request
 from src.services.Recovery_service import RecoveryService
-from src.Api_response import ApiResponse
+from src.utils.Api_response import ApiResponse
 
 recovery_bp = Blueprint('recovery', __name__)
 

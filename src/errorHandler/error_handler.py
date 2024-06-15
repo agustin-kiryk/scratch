@@ -1,4 +1,4 @@
-# src/error_handler.py
+
 from flask import jsonify, g, Response
 from pydantic import ValidationError
 from werkzeug.exceptions import HTTPException

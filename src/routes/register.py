@@ -2,7 +2,7 @@ import json
 
 from flask import Blueprint, request, jsonify, Response
 from src.services.Registration_service import RegistrationService
-from src.Api_response import ApiResponse
+from src.utils.Api_response import ApiResponse
 
 register_bp = Blueprint('registerUser', __name__)
 

@@ -2,7 +2,7 @@ import json
 from datetime import datetime
 
 from flask import Response
-from src.Api_response import ApiResponse
+from src.utils.Api_response import ApiResponse
 from src.client.Twilio_client import send_verification_sms, verify_sms
 from src.client.Flask_mail_client import send_verification_email, verify_email_code
 from src.client.Paycaddy_client import create_user_paycaddy
@@ -26,6 +26,7 @@ class RegistrationService:
     @staticmethod
     def handle_step_1(data):
         required_fields = ['name', 'lastName', 'livePanama', 'birthDate', 'email', 'phone_number', 'password', 'nationality']
+        optional_fields = ['role']
 
         # Verificar que todos los campos requeridos están presentes en los datos enviados
         missing_fields = [field for field in required_fields if field not in data]
@@ -47,6 +48,7 @@ class RegistrationService:
         phone_number = data.get('phone_number')
         hashed_password = RegistrationService.hash_password(data.get('password'))
         try:
+            role = data.get('role', 'user')
             temp_user = TempUser(
                 name=data.get('name'),
                 lastName=data.get('lastName'),
@@ -56,7 +58,8 @@ class RegistrationService:
                 phoneNumber=phone_number,
                 password=hashed_password,
                 verification_code=secrets.token_hex(4),
-                nationality=data.get('nationality')
+                nationality=data.get('nationality'),
+                role=role
             )
         except ValidationError as e:
             response_data = {'error': 'Invalid data', 'detail': e.errors()}
@@ -263,7 +266,8 @@ class RegistrationService:
             email=temp_user.email,
             points=0,
             status=1,
-            password=hashed_password
+            password=hashed_password,
+            role=temp_user.role
         )
         return new_user
 

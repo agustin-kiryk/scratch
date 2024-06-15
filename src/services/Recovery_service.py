@@ -1,7 +1,7 @@
 from src.repositories.User_repository import UserRepository
 from src.repositories.PasswordRecovery_repository import PasswordRecoveryRepository
 from src.client.Flask_mail_client import send_verification_email
-from src.Api_response import ApiResponse
+from src.utils.Api_response import ApiResponse
 from src.models.PasswordRecovery_model import PasswordRecovery
 import secrets
 import bcrypt
