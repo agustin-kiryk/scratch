@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 
 from flask import Response
+from src.errorHandler.error_codes import codes
 from src.utils.Api_response import ApiResponse
 from src.client.Twilio_client import send_verification_sms, verify_sms
 from src.client.Flask_mail_client import send_verification_email, verify_email_code
@@ -32,7 +33,7 @@ class RegistrationService:
         missing_fields = [field for field in required_fields if field not in data]
         if missing_fields:
             response_data = {'error': f'Missing required fields: {", ".join(missing_fields)}'}
-            return ApiResponse(message='Missing required fields', code=409, data=missing_fields).to_response()
+            return ApiResponse(message='Missing required fields', code=codes.BAD_REQUEST, data=missing_fields).to_response()
 
         user_email = data.get('email')
         user_repo = UserRepository()

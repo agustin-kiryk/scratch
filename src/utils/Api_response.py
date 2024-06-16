@@ -2,15 +2,16 @@ import uuid
 from datetime import datetime
 from flask import g, jsonify
 from collections import OrderedDict
+from src.errorHandler.error_codes import handlerCode, codes
 
 class ApiResponse:
-    def __init__(self, data=None, message=None, code=200):
+    def __init__(self, data=None, code=codes.SUCCESS, message=None):
         self.headerStatus = {
-            'code': code,
-            'description': 'Success' if code == 200 else 'Error'
+            'code': code.code,
+            'description': code.description
         }
         self.serverTime = datetime.utcnow().isoformat()
-        self.message = message
+        self.message = message if message else code.message
         self.requestId = g.get('request_id', str(uuid.uuid4()))
         self.data = data
 
