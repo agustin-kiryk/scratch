@@ -44,7 +44,7 @@ class RegistrationService:
 
         if existing_user or existing_temp_user:
             response_data = {'error': 'User already exists' if existing_user else 'A user is trying to register with that email'}
-            return ApiResponse(message='User already exists' if existing_user else 'A user is trying to register with that email', code=409, data=existing_user).to_response()
+            return ApiResponse(message='User already exists' if existing_user else 'A user is trying to register with that email', code=codes.USER_EXIST, data=existing_user).to_response()
 
         phone_number = data.get('phone_number')
         hashed_password = RegistrationService.hash_password(data.get('password'))
@@ -64,7 +64,7 @@ class RegistrationService:
             )
         except ValidationError as e:
             response_data = {'error': 'Invalid data', 'detail': e.errors()}
-            return ApiResponse(message= response_data,code=400).to_response()
+            return ApiResponse(message= response_data,code=codes.UNSUPPORTED_VALIDATION).to_response()
         
         temp_user_repo.insert(temp_user)
         new_temp_user= temp_user_repo.find_by_email(user_email)
@@ -77,11 +77,11 @@ class RegistrationService:
                 'error': 'Failed to send verification SMS.',
                 'detail': sms_result
             }
-            return ApiResponse(message='Failed to send verification SMS.', code=409, data=sms_result).to_response()
+            return ApiResponse(message='Failed to send verification SMS.', code=codes.SMS_FAILED, data=sms_result).to_response()
 
         response_data = {'message': 'SMS verification code sent'}
        # return Response(json.dumps(response_data), status=200, mimetype='application/json')
-        return ApiResponse(data=new_temp_user.to_mongo_dict(), code=200,message='SMS verification code sent').to_response()
+        return ApiResponse(data=new_temp_user.to_mongo_dict(), code=codes.SUCCESS,message='SMS verification code sent').to_response()
 
     @staticmethod
     def handle_step_2(data):
@@ -90,14 +90,14 @@ class RegistrationService:
         email = data.get('email')
 
         if not phone_number or not sms_code:
-            return ApiResponse(code=400, message='Phone number and SMS code are required', data={'step': 2}).to_response()
+            return ApiResponse(code=codes.BAD_REQUEST, message='Phone number and SMS code are required', data={'step': 2}).to_response()
 
         temp_user_repo = TempUserRepository()
         temp_user = temp_user_repo.find_by_email(email)
 
         if temp_user:
             if temp_user.phoneVerified and temp_user.email_verified:
-                return ApiResponse(code=400, message= "User is verified phone and email" , data= {'step': 2, 'tempUser':temp_user.to_mongo_dict()}).to_response()
+                return ApiResponse(code=codes.BAD_REQUEST, message= "User is verified phone and email" , data= {'step': 2, 'tempUser':temp_user.to_mongo_dict()}).to_response()
             
             if temp_user.phoneVerified and not temp_user.email_verified:
                 # Si el teléfono ya está verificado, solo envía el código de verificación por email
@@ -106,9 +106,9 @@ class RegistrationService:
                     send_verification_email(email, email_verification_code)
                     temp_user.email_verification_code = email_verification_code
                     temp_user_repo.update(temp_user)
-                    return ApiResponse(message='Email verification code sent', code=200, data={'step': 2}).to_response()
+                    return ApiResponse(message='Email verification code sent', code=codes.SUCCESS, data={'step': 2}).to_response()
                 except Exception as e:
-                    return ApiResponse(message='Failed to send verification email', code=500, data={'step': 2, 'error': str(e)}).to_response()
+                    return ApiResponse(message='Failed to send verification email', code=codes.SMS_FAILED, data={'step': 2, 'error': str(e)}).to_response()
             else:
                 # Verifica el estado de la verificación del SMS
                 verification_status = verify_sms(phone_number, sms_code)
@@ -121,13 +121,13 @@ class RegistrationService:
                         temp_user_repo.update(temp_user)
                         updated_temp_user = temp_user_repo.find_by_email(email)
 
-                        return ApiResponse(message='SMS verified and email verification code sent', code=200, data={'step': 2}).to_response()
+                        return ApiResponse(message='SMS verified and email verification code sent', code=codes.SUCCESS, data={'step': 2}).to_response()
                     except Exception as e:
-                        return ApiResponse(message='Failed to send verification email', code=500, data={'step': 2, 'error': str(e)}).to_response()
+                        return ApiResponse(message='Failed to send verification email', code=codes.EMAIL_FAILED, data={'step': 2, 'error': str(e)}).to_response()
                 else:
-                    return ApiResponse(message='Invalid SMS code or verification not approved', code=400, data={'step': 2}).to_response()
+                    return ApiResponse(message='Invalid SMS code or verification not approved', code=codes.BAD_REQUEST, data={'step': 2}).to_response()
         else:
-            return ApiResponse(message='Temporary user not found', code=404, data={'step': 2}).to_response()
+            return ApiResponse(message='Temporary user not found', code=codes.NOT_FOUND, data={'step': 2}).to_response()
     
     
     @staticmethod
@@ -160,13 +160,13 @@ class RegistrationService:
             if result:
                 user_data = RegistrationService.build_response(new_user, result)
                 response_data = {'user': user_data, 'step': 3}
-                return ApiResponse(data=response_data, code=200, message='User registered successfully').to_response()
+                return ApiResponse(data=response_data, code=codes.SUCCESS, message='User registered successfully').to_response()
             else:
                 response_data = {'step': 3, 'error': 'Failed to register user'}
-                return ApiResponse(data=response_data, code=500, message='Failed to register user').to_response()
+                return ApiResponse(data=response_data, code=codes.INTERNAL_SERVER_ERROR, message='Failed to register user').to_response()
         else:
             response_data = {'step': 3, 'error': 'Invalid email code or phone not verified'}
-            return ApiResponse(data=response_data, code=400, message='Invalid email code or phone not verified').to_response()
+            return ApiResponse(data=response_data, code=codes.NOT_FOUND, message='Invalid email code or phone not verified').to_response()
 
 
     
@@ -176,7 +176,7 @@ class RegistrationService:
         missing_fields = [field for field in required_fields if field not in data]
         if missing_fields:
             response_data = {'step': 4, 'error': f'Missing required fields: {", ".join(missing_fields)}'}
-            return ApiResponse(data=response_data, code=400, message='Missing required fields').to_response()
+            return ApiResponse(data=response_data, code=codes.BAD_REQUEST, message='Missing required fields').to_response()
 
         try:
             # Validar y filtrar los datos recibidos utilizando el modelo de Pydantic
@@ -203,17 +203,17 @@ class RegistrationService:
             )
         except ValidationError as e:
             response_data = {'step': 4, 'error': 'Invalid data', 'detail': e.errors()}
-            return ApiResponse(data=response_data, code=400, message='Invalid data').to_response()
+            return ApiResponse(data=response_data, code=codes.BAD_REQUEST, message='Invalid data').to_response()
 
         try:
             user_response = create_user_paycaddy(user_data.dict())
         except Exception as e:
             response_data = {'step': 4, 'error': 'Failed to create user in PayCaddy', 'detail': str(e)}
-            return ApiResponse(data=response_data, code=500, message='Failed to create user in PayCaddy').to_response()
+            return ApiResponse(data=response_data, code=codes.INTERNAL_SERVER_ERROR, message='Failed to create user in PayCaddy').to_response()
 
         if 'error' in user_response:
             response_data = {'step': 4, 'error': 'Failed to create user in PayCaddy', 'detail': user_response.get('error')}
-            return ApiResponse(data=response_data, code=400, message='Failed to create user in PayCaddy').to_response()
+            return ApiResponse(data=response_data, code=codes.BAD_REQUEST, message='Failed to create user in PayCaddy').to_response()
 
         user_id = str(user_response['id'])
 
@@ -240,7 +240,7 @@ class RegistrationService:
         response_data = RegistrationService.build_response_info_user_and_paycaddy(data, user_response)
         response_data['step'] = 4
 
-        return ApiResponse(data=response_data, code=200, message='User registered successfully pending kyc').to_response()
+        return ApiResponse(data=response_data, code=codes.SUCCESS, message='User registered successfully pending kyc').to_response()
 
     @staticmethod
     def generate_pin():
@@ -316,28 +316,28 @@ class RegistrationService:
         temp_user_repo = TempUserRepository()
         temp_user = temp_user_repo.find_by_email(email)
         if not temp_user:
-            return ApiResponse(message='Temporary user not found', code=404).to_response()
+            return ApiResponse(message='Temporary user not found', code=codes.NOT_FOUND).to_response()
 
         phone_number = temp_user.phoneNumber
         sms_result = send_verification_sms(phone_number)
         if isinstance(sms_result, dict) and 'error' in sms_result:
-            return ApiResponse(message='Failed to send verification SMS', code=500, data=sms_result).to_response()
+            return ApiResponse(message='Failed to send verification SMS', code=codes.INTERNAL_SERVER_ERROR, data=sms_result).to_response()
 
-        return ApiResponse(message= 'Verification SMS sent successfully', code=200).to_response()
+        return ApiResponse(message= 'Verification SMS sent successfully', code=codes.SUCCESS).to_response()
     
     @staticmethod
     def resend_email_verification(email):
         temp_user_repo = TempUserRepository()
         temp_user = temp_user_repo.find_by_email(email)
         if not temp_user:
-            return ApiResponse(message='Temporary user not found', code=404).to_response()
+            return ApiResponse(message='Temporary user not found', code=codes.NOT_FOUND).to_response()
 
         email_verification_code = RegistrationService.generate_pin()
         try:
             send_verification_email(email, email_verification_code)
             temp_user.email_verification_code = email_verification_code
             temp_user_repo.update(temp_user)
-            return ApiResponse(message='Email verification code sent', code=200, data={'step': 2}).to_response()
+            return ApiResponse(message='Email verification code sent', code=codes.SUCCESS, data={'step': 2}).to_response()
         except Exception as e:
-                return ApiResponse(message='Failed to send verification email', code=500, data={'step': 2, 'error': str(e)}).to_response()
+                return ApiResponse(message='Failed to send verification email', code=codes.INTERNAL_SERVER_ERROR, data={'step': 2, 'error': str(e)}).to_response()
          

@@ -30,7 +30,7 @@ def resend_sms():
     data = request.get_json()
     email = data.get('email')
     if not email:
-        return ApiResponse(message='Email is required', code=400).to_response()
+        return ApiResponse(message='Email is required', code=codes.BAD_REQUEST).to_response()
     return RegistrationService.resend_sms_verification(email)
 
 @register_bp.route('/resendEmailCode', methods=['POST'])
@@ -38,5 +38,5 @@ def resend_email_code():
     data = request.get_json()
     email = data.get('email')
     if not email:
-        return ApiResponse(message='Email is required', code=400).to_response()
+        return ApiResponse(message='Email is required', code=codes.BAD_REQUEST).to_response()
     return RegistrationService.resend_email_verification(email)
