@@ -24,7 +24,7 @@ class User(BaseModel):
     financial_info_id: Optional[str] = None  # Referencia a la información financiera
     role: str = "user"
 
-    collection_name: str = 'users' 
+    collection_name: str = 'users'
 
     @validator("name", "lastName", "email", "password")
     def not_empty(cls, v):
@@ -44,7 +44,13 @@ class User(BaseModel):
 
     @staticmethod
     def from_mongo_dict(data):
-        data["id"] = str(data.pop("_id", ""))
-        return User(**data)
-    
-       
+        print(f"Data from MongoDB: {data}")
+        # Convert ObjectId to string
+        if '_id' in data and isinstance(data['_id'], ObjectId):
+            data['_id'] = str(data['_id'])
+        if 'financial_info_id' in data and isinstance(data['financial_info_id'], ObjectId):
+            data['financial_info_id'] = str(data['financial_info_id'])
+        print(f"Data before conversion: {data}")
+        user = User(**data)
+        print(f"Converted instance: {user}")
+        return user

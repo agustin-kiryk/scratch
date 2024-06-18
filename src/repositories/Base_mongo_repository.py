@@ -18,12 +18,16 @@ class BaseRepository(Generic[T]):
     def find_by_id(self, id: str) -> Optional[T]:
         data = self.collection.find_one({'_id': ObjectId(id)})
         return self.model.from_mongo_dict(data) if data else None
-    
+
 
     def find_by_email(self, email: str) -> Optional[T]:
         data = self.collection.find_one({'email': email})
-        return self.model.from_mongo_dict(data) if data else None
-
+        if data:
+            print(f"Data before conversion: {data}")  # Depuración
+            instance = self.model.from_mongo_dict(data)
+            print(f"Converted instance: {instance}")  # Depuración
+            return instance
+        return None
     def insert(self, document: T) -> str:
         mongo_dict = document.to_mongo_dict()
         # Remove `id` if it's None or empty to let MongoDB generate `_id`
