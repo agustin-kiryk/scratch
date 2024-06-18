@@ -23,9 +23,7 @@ class BaseRepository(Generic[T]):
     def find_by_email(self, email: str) -> Optional[T]:
         data = self.collection.find_one({'email': email})
         if data:
-            print(f"Data before conversion: {data}")  # Depuración
             instance = self.model.from_mongo_dict(data)
-            print(f"Converted instance: {instance}")  # Depuración
             return instance
         return None
     def insert(self, document: T) -> str:

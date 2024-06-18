@@ -16,10 +16,7 @@ class FinancialInfoService(BaseService[FinancialInfo]):
 
         # Filtrar solo los campos proporcionados en la solicitud
         update_fields = {k: v for k, v in data.items() if v is not None}
-
-        # Añadir la fecha de actualización
         update_fields['updated_at'] = datetime.utcnow()
-
         financial_info_repo = FinancialInfoRepository()
         financial_info_repo.update_by_user_id(user_id, update_fields)
 
@@ -30,11 +27,7 @@ class FinancialInfoService(BaseService[FinancialInfo]):
 
         # Filtrar solo los campos proporcionados en la solicitud
         update_fields = {k: v for k, v in data.items() if v is not None}
-
-        # Añadir la fecha de actualización
         update_fields['updated_at'] = datetime.utcnow()
-
-        # Llama al método del repositorio para actualizar la información financiera
         self.repository.update_by_user_id(user_id, update_fields)
 
         return ApiResponse(message='Financial information updated successfully', code=codes.SUCCESS).to_response()

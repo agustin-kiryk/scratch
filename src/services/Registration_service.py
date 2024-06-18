@@ -30,7 +30,6 @@ class RegistrationService:
         required_fields = ['name', 'lastName', 'livePanama', 'birthDate', 'email', 'phone_number', 'password', 'nationality']
         optional_fields = ['role']
 
-        # Verificar que todos los campos requeridos están presentes en los datos enviados
         missing_fields = [field for field in required_fields if field not in data]
         if missing_fields:
             response_data = {'error': f'Missing required fields: {", ".join(missing_fields)}'}
@@ -173,24 +172,22 @@ class RegistrationService:
         missing_fields = [field for field in required_fields if field not in data]
         if missing_fields:
             response_data = {'step': 4, 'error': f'Missing required fields: {", ".join(missing_fields)}'}
-            return ApiResponse(data=response_data, code=400, message='Missing required fields').to_response()
+            return ApiResponse(data=response_data, code=codes.NOT_FOUND, message='Missing required fields').to_response()
 
         user_repo = UserRepository()
         card_order_repo = CardOrderRepository()
 
         user_email = data.get('email')
-        user = user_repo.find_by_email(user_email)
-        print(f"User retrieved: {user}")  # Depuración
-        print(f"User ID: {user.id}")  # Depuración
-
+        user = user_repo.find_by_email('user_email')
+        
         if not user:
             response_data = {'step': 4, 'error': 'User not found'}
-            return ApiResponse(data=response_data, code=404, message='User not found').to_response()
+            return ApiResponse(data=response_data, code=codes.NOT_FOUND, message='User not found').to_response()
 
         existing_card_order = card_order_repo.find_by_user_id(user.id)
         if existing_card_order:
             response_data = {'step': 4, 'error': 'A card order already exists for this user'}
-            return ApiResponse(data=response_data, code=409, message='A card order already exists for this user').to_response()
+            return ApiResponse(data=response_data, code=codes.BAD_REQUEST, message='A card order already exists for this user').to_response()
 
         try:
             address_data = data.get('address')
@@ -216,17 +213,17 @@ class RegistrationService:
             )
         except ValidationError as e:
             response_data = {'step': 4, 'error': 'Invalid data', 'detail': e.errors()}
-            return ApiResponse(data=response_data, code=400, message='Invalid data').to_response()
+            return ApiResponse(data=response_data, code=codes.BAD_REQUEST, message='Invalid data').to_response()
 
         try:
             user_response = create_user_paycaddy(user_data.dict())
         except Exception as e:
             response_data = {'step': 4, 'error': 'Failed to create user in PayCaddy', 'detail': str(e)}
-            return ApiResponse(data=response_data, code=500, message='Failed to create user in PayCaddy').to_response()
+            return ApiResponse(data=response_data, code=codes.INTERNAL_SERVER_ERROR, message='Failed to create user in PayCaddy').to_response()
 
         if 'error' in user_response:
             response_data = {'step': 4, 'error': 'Failed to create user in PayCaddy', 'detail': user_response.get('error')}
-            return ApiResponse(data=response_data, code=400, message='Failed to create user in PayCaddy').to_response()
+            return ApiResponse(data=response_data, code=codes.INTERNAL_SERVER_ERROR, message='Failed to create user in PayCaddy').to_response()
 
         card_order = CardOrder(
             user_id=str(user.id),
@@ -251,7 +248,7 @@ class RegistrationService:
         response_data = build_response_info_user_and_paycaddy(card_order, user_response)
         response_data['step'] = 4
 
-        return ApiResponse(data=response_data, code=200, message='User registered successfully pending kyc').to_response()
+        return ApiResponse(data=response_data, code=codes.SUCCESS, message='User registered successfully pending kyc').to_response()
 @staticmethod
 def generate_pin():
     return ''.join(secrets.choice('0123456789') for _ in range(4))
@@ -303,7 +300,7 @@ def build_response(new_user, result):
 
 @staticmethod
 def build_response_info_user_and_paycaddy(user_response, card_order):
-    return json.dumps({
+    return {
         "firstName": user_response.firstName,
         "lastName": user_response.lastName,
         "email": user_response.email,
@@ -316,7 +313,7 @@ def build_response_info_user_and_paycaddy(user_response, card_order):
         "walletId": card_order.get('walletId', ''),
         "kycUrl": card_order.get('kycUrl', ''),
         "creationDate": user_response.creationDate
-    })
+    }
 
 
 @staticmethod

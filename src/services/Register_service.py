@@ -156,7 +156,7 @@ def handle_step_4(data):
 
     user_id = str(user_response['id'])
 
-    # Crear y almacenar el pedido de tarjeta
+    
     card_order = CardOrder(user_id=user_id, data=data)
     card_order.walletId = user_response.get('walletId', '')
     card_order.user_id_paycaddy = user_response.get('id', '')
