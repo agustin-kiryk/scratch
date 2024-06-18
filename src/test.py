@@ -2,7 +2,7 @@ import smtplib
 import ssl
 
 smtp_server = 'smtp.gmail.com'
-port = 587  # For starttls
+port = 587  
 sender_email = 'agustin.k.dsi@gmail.com'
 password = 'umpipenwtftfpxjl'
 
@@ -11,10 +11,10 @@ context = ssl.create_default_context()
 
 try:
     server = smtplib.SMTP(smtp_server, port)
-    server.set_debuglevel(1)  # Enable debug output
-    server.ehlo()  # Can be omitted
-    server.starttls(context=context)  # Secure the connection
-    server.ehlo()  # Can be omitted
+    server.set_debuglevel(1)  
+    server.ehlo()  
+    server.starttls(context=context)  
+    server.ehlo()  
     server.login(sender_email, password)
     print("Conexión SMTP exitosa")
 except Exception as e:

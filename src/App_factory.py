@@ -4,6 +4,7 @@ from flask_mail import Mail
 from src.config.mongodb import mongo
 from src.config.Email_config import Config
 from src.routes.register import register_bp
+from src.routes.User_route import user_blueprint
 
 mail = Mail()
 
@@ -23,15 +24,24 @@ def create_app():
     app.register_blueprint(register_blueprint, url_prefix='/user')
     app.register_blueprint(auth_blueprint, url_prefix='/auth')
     app.register_blueprint(register_bp, url_prefix='/api')
+    app.register_blueprint(user_blueprint, url_prefix='/api')
+  
 
     from src.routes.Webhook_paycaddy import webhook_paycaddy_blueprint
     app.register_blueprint(webhook_paycaddy_blueprint, url_prefix='/webhook')
     
     from src.routes.FinancialInfoRoute import financial_bp
     app.register_blueprint(financial_bp, url_prefix='/api')
+    
+    from src.routes.recovery import recovery_bp
+    app.register_blueprint(recovery_bp, url_prefix='/api')
+    
+    
 
     @app.route('/')
     def index():
         return 'Hello world umpi penw tftf pxjl'
 
     return app
+
+

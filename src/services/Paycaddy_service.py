@@ -45,6 +45,6 @@ def process_webhook_data():
 
 
 def create_wallet_for_user(user_id):
-    # Implementa la lógica para crear una wallet para el usuario
+
     #  hacer una llamada a Paycaddy para crear la wallet
     pass
