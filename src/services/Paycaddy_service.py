@@ -22,7 +22,7 @@ def process_webhook_data():
         age = payload_body.get('age')
         timestamp = payload_body.get('timeStamp')
 
-        card_order_repository = CardOrderRepository(mongo.db)
+        card_order_repository = CardOrderRepository()
         card_order = card_order_repository.find_by_user_id(user_id)
 
         if not card_order:
@@ -36,7 +36,7 @@ def process_webhook_data():
         if new_status == CardOrderKycStatus.VERIFIED:
             create_wallet_for_user(user_id)
 
-        card_order_repository.update_status(user_id, new_status)
+        card_order_repository.update(user_id, new_status)
 
         return jsonify({"success": True}), 200
 
