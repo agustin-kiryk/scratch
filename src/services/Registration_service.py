@@ -47,7 +47,7 @@ class RegistrationService:
             return ApiResponse(message='User already exists' if existing_user else 'A user is trying to register with that email', code=codes.USER_EXIST, data=existing_user).to_response()
 
         phone_number = data.get('phone_number')
-        hashed_password = RegistrationService.hash_password(data.get('password'))
+        hashed_password = hash_password(data.get('password'))
         try:
             role = data.get('role', 'user')
             temp_user = TempUser(
@@ -100,7 +100,7 @@ class RegistrationService:
 
             if temp_user.phoneVerified and not temp_user.email_verified:
                 # Si el teléfono ya está verificado, solo envía el código de verificación por email
-                email_verification_code = RegistrationService.generate_pin()
+                email_verification_code = generate_pin()
                 try:
                     send_verification_email(email, email_verification_code)
                     temp_user.email_verification_code = email_verification_code
@@ -113,7 +113,7 @@ class RegistrationService:
                 verification_status = verify_sms(phone_number, sms_code)
                 if verification_status == 'approved':
                     temp_user.phoneVerified = True
-                    email_verification_code = RegistrationService.generate_pin()
+                    email_verification_code = generate_pin()
                     try:
                         send_verification_email(email, email_verification_code)
                         temp_user.email_verification_code = email_verification_code
@@ -345,7 +345,7 @@ def resend_email_verification(email):
     if not temp_user:
         return ApiResponse(message='Temporary user not found', code=codes.NOT_FOUND).to_response()
 
-    email_verification_code = RegistrationService.generate_pin()
+    email_verification_code = generate_pin()
     try:
         send_verification_email(email, email_verification_code)
         temp_user.email_verification_code = email_verification_code
