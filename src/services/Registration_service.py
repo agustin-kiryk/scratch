@@ -179,7 +179,7 @@ class RegistrationService:
 
         user_email = data.get('email')
         user = user_repo.find_by_email('user_email')
-        
+
         if not user:
             response_data = {'step': 4, 'error': 'User not found'}
             return ApiResponse(data=response_data, code=codes.NOT_FOUND, message='User not found').to_response()
@@ -249,18 +249,18 @@ class RegistrationService:
         response_data['step'] = 4
 
         return ApiResponse(data=response_data, code=codes.SUCCESS, message='User registered successfully pending kyc').to_response()
-@staticmethod
+
+
 def generate_pin():
     return ''.join(secrets.choice('0123456789') for _ in range(4))
 
 
-@staticmethod
 def hash_password(password):
     hashed_password_bytes = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
     return hashed_password_bytes.decode('utf-8')
 
 
-@staticmethod
+
 def build_new_user(temp_user, hashed_password):
     new_user = User(
         name=temp_user.name,
@@ -282,7 +282,6 @@ def build_new_user(temp_user, hashed_password):
     return new_user
 
 
-@staticmethod
 def build_response(new_user, result):
     user_id = str(result)
     user_data = {
@@ -298,7 +297,6 @@ def build_response(new_user, result):
     return user_data
 
 
-@staticmethod
 def build_response_info_user_and_paycaddy(user_response, card_order):
     return {
         "firstName": user_response.firstName,
@@ -309,21 +307,20 @@ def build_response_info_user_and_paycaddy(user_response, card_order):
         "pep": user_response.pep,
         "salary": user_response.salary,
         "address": user_response.address.dict(),
-        "isActive": card_order.get('isActive',''),
+        "isActive": card_order.get('isActive', ''),
         "walletId": card_order.get('walletId', ''),
         "kycUrl": card_order.get('kycUrl', ''),
         "creationDate": user_response.creationDate
     }
 
 
-@staticmethod
 def build_financial_info_user(user_id: str) -> FinancialInfo:
     return FinancialInfo(
         user_id=user_id
     )
 
 
-@staticmethod
+
 def resend_sms_verification(email):
     temp_user_repo = TempUserRepository()
     temp_user = temp_user_repo.find_by_email(email)
@@ -338,7 +335,6 @@ def resend_sms_verification(email):
     return ApiResponse(message='Verification SMS sent successfully', code=codes.SUCCESS).to_response()
 
 
-@staticmethod
 def resend_email_verification(email):
     temp_user_repo = TempUserRepository()
     temp_user = temp_user_repo.find_by_email(email)

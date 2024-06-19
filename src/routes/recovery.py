@@ -5,6 +5,7 @@ from src.errorHandler.error_codes import codes
 
 recovery_bp = Blueprint('recovery', __name__)
 
+
 @recovery_bp.route('/request_password_recovery', methods=['POST'])
 def request_password_recovery():
     data = request.get_json()
@@ -12,6 +13,7 @@ def request_password_recovery():
     if not email:
         return ApiResponse(message='Email is required', code=codes.BAD_REQUEST).to_response()
     return RecoveryService.request_password_recovery(email)
+
 
 @recovery_bp.route('/verify_recovery_code', methods=['POST'])
 def verify_recovery_code():
@@ -21,6 +23,7 @@ def verify_recovery_code():
     if not email or not recovery_code:
         return ApiResponse(message='Email and recovery code are required', code=codes.BAD_REQUEST).to_response()
     return RecoveryService.verify_recovery_code(email, recovery_code)
+
 
 @recovery_bp.route('/set_new_password', methods=['POST'])
 def set_new_password():
