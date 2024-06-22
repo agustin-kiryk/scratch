@@ -20,6 +20,7 @@ class codes:
     ENTITY_NOT_EXIST = handlerCode(406, "Entity not exist", "The entity not storage")
     USER_EXIST = handlerCode(407, "Entity not exist", "The entity not storage")
     CONFLICT = handlerCode(409, "Conflict", "The request could not be completed due to a conflict with the current state of the resource.")
+    CODE_NOT_VALIDATED = handlerCode(410, "Code not validated", "Code not validated")
     PAYLOAD_TOO_LARGE = handlerCode(413, "Payload Too Large", "The request payload is too large to be processed.")
     UNSUPPORTED_MEDIA_TYPE = handlerCode(415, "Unsupported Media Type", "The request payload format is not supported.")
     UNSUPPORTED_VALIDATION = handlerCode(416, "Validation type error", "The field not supported type.")

@@ -19,7 +19,6 @@ class BaseRepository(Generic[T]):
         data = self.collection.find_one({'_id': ObjectId(id)})
         return self.model.from_mongo_dict(data) if data else None
 
-
     def find_by_email(self, email: str) -> Optional[T]:
         data = self.collection.find_one({'email': email})
         if data:
@@ -39,8 +38,7 @@ class BaseRepository(Generic[T]):
         # Ensure _id is not included in the update data
         update_data.pop('_id', None)
         self.collection.update_one({'_id': ObjectId(document.id)}, {'$set': update_data})
-        
-        
+
     def update_by_id(self, id: str, update_data: dict) -> None:
         # Ensure _id is not included in the update data
         update_data.pop('_id', None)
@@ -48,18 +46,18 @@ class BaseRepository(Generic[T]):
 
     def delete_by_email(self, email: str) -> None:
         self.collection.delete_one({'email': email})
-        
+
     def delete_by_id(self, id: str) -> None:
         self.collection.delete_one({'_id': ObjectId(id)})
-        
+
     def find_all(self) -> list[T]:
-       return [self.model.from_mongo_dict(doc) for doc in self.collection.find()]
-   
+        return [self.model.from_mongo_dict(doc) for doc in self.collection.find()]
+
     def find_by_params(self, params: Dict[str, str]) -> List[T]:
         query = {k: int(v) if v.isdigit() else v for k, v in params.items()}  # Convertir valores numéricos a int
         data = self.collection.find(query)
         return [self.model.from_mongo_dict(doc) for doc in data]
-    
+
     def find_by_params(self, params: Dict[str, str]) -> List[T]:
         query = {}
         for k, v in params.items():
@@ -70,7 +68,7 @@ class BaseRepository(Generic[T]):
                 v = False
             elif v.isdigit():
                 v = int(v)
-            
+
             # Handle operators
             if '__' in k:
                 field, operator = k.split('__')

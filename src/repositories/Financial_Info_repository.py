@@ -1,6 +1,7 @@
 from src.models.Financial_info import FinancialInfo
 from src.repositories.Base_mongo_repository import BaseRepository
 
+
 class FinancialInfoRepository(BaseRepository[FinancialInfo]):
     def __init__(self):
         super().__init__(FinancialInfo)
