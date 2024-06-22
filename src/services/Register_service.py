@@ -8,11 +8,17 @@ from flask_jwt_extended import create_access_token
 from src.client.Twilio_client import send_verification_sms, verify_sms
 from src.config.mongodb import mongo
 from src.enums.Kyc_enum import CardOrderKycStatus
+from src.errorHandler.error_codes import codes
 from src.models.card_order import CardOrder
 from src.models.User_model import User
 from src.client.Flask_mail_client import send_verification_email, verify_email_code
 from datetime import datetime
 from src.client.Paycaddy_client import create_user_paycaddy
+import logging
+
+from src.utils.Api_response import ApiResponse
+
+logger = logging.getLogger(__name__)
 
 
 def generate_pin():
@@ -35,15 +41,30 @@ def test_login():
     data = request.get_json()
     existing_user = mongo.db.users.find_one({'email': data.get('email')})
 
-    if existing_user:
-        stored_password = existing_user.get('password')
-        if stored_password and verify_password(data.get('password'), stored_password):
-            access_token = create_access_token(identity=str(existing_user['_id']))
-            return jsonify(access_token=access_token), 200
-        return Response(json.dumps({'error': 'Invalid credentials'}), status=401, mimetype='application/json')
+    if not existing_user:
+        logger.warning(f"invalid login for user {data.get('email')}")
+        return ApiResponse(message='User not found', code=codes.NOT_FOUND).to_response()
 
-    return Response(json.dumps({'error': 'User not found'}), status=404, mimetype='application/json')
+    stored_password = existing_user.get('password')
+    if stored_password and verify_password(data.get('password'), stored_password):
+        access_token = create_access_token(identity=str(existing_user['_id']))
+        logger.info(f"login success for user :  {existing_user}")
+        user_data = {
+            'id': str(existing_user['_id']),
+            'name': existing_user.get('name'),
+            'lastName': existing_user.get('lastName'),
+            'email': existing_user.get('email'),
+            'phoneNumber': existing_user.get('phoneNumber'),
+            'role': existing_user.get('role')
+        }
+        response_data = {
+            'access_token': access_token,
+            'user': user_data
+        }
+        return ApiResponse(data=response_data, code=codes.SUCCESS, message='Login successful').to_response()
 
+    logger.warning(f"invalid login for user {data.get('email')}")
+    return ApiResponse(message='Invalid credentials', code=codes.UNAUTHORIZED).to_response()
 
 def register_new_user2():
     data = request.get_json()
@@ -156,7 +177,6 @@ def handle_step_4(data):
 
     user_id = str(user_response['id'])
 
-    
     card_order = CardOrder(user_id=user_id, data=data)
     card_order.walletId = user_response.get('walletId', '')
     card_order.user_id_paycaddy = user_response.get('id', '')
