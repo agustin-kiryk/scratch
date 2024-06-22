@@ -3,10 +3,12 @@ from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from bson import ObjectId
 
+
 class PasswordRecovery(BaseModel):
     id: Optional[str] = Field(None, alias='_id')
     email: EmailStr
     recovery_code: str
+    validate_code: bool
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     class Config:
@@ -21,5 +23,9 @@ class PasswordRecovery(BaseModel):
 
     @staticmethod
     def from_mongo_dict(data):
-        data["id"] = str(data.pop("_id", ""))
-        return PasswordRecovery(**data)
+        # Convert ObjectId to string
+        if '_id' in data and isinstance(data['_id'], ObjectId):
+            data['_id'] = str(data['_id'])
+
+        recovery = PasswordRecovery(**data)
+        return recovery
