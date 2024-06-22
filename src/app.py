@@ -4,15 +4,14 @@ import uuid
 import logging
 from flask import Flask, jsonify, g, Response
 from pydantic import ValidationError
+from flask_cors import CORS
+from src.utils.Api_response import ApiResponse
+from src.App_factory import create_app
+from src.errorHandler.error_codes import codes
 from werkzeug.exceptions import HTTPException
 
 # Añadir el directorio src al path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-from src.utils.Api_response import ApiResponse
-from src.App_factory import create_app
-from src.errorHandler.error_codes import codes
-from flask_cors import CORS
 
 app = create_app()
 CORS(app)  # Habilita CORS para toda la aplicación
