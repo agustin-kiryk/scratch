@@ -1,6 +1,8 @@
 import logging
 
 from flask import request, jsonify
+
+from src.client import Paycaddy_client
 from src.config.mongodb import mongo
 from src.enums.Kyc_enum import CardOrderKycStatus
 from src.repositories.Card_order_repository import CardOrderRepository
@@ -45,7 +47,7 @@ def process_webhook_data():
         userRepository.update(user_real)
 
         if new_status == CardOrderKycStatus.VERIFIED:
-            create_wallet_for_user(user_id_paycaddy)
+            create_credit_wallet_for_user(card_order)
 
         # Almacenar la referencia del KYC en la colección user_kyc
         user_kyc_data = {
@@ -70,6 +72,47 @@ def process_webhook_data():
         return jsonify({"error": str(e)}), 500
 
 
-def create_wallet_for_user(user_id):
-    #  hacer una llamada a Paycaddy para crear la wallet
-    pass
+def create_credit_wallet_for_user(card_order):
+    """Evaluar salario y ocupación para establecer el límite de crédito y crear la wallet de crédito en Paycaddy."""
+    try:
+        salary = card_order.salary
+        occupation = card_order.occupation.lower()
+        logging.info(f"Creating credit wallet for user with occupation: {occupation} and salary: {salary}")
+
+        # Establecer los límites según la ocupación TODO: PASAR A ENUMERADO
+        occupation_limits = {
+            'trabajador': 0.30,
+            'emprendedor': 0.25,
+            'papas apoyan': 0.20,
+            'cryptouser': 0.30
+        }
+
+        # Validar la ocupación
+        if occupation not in occupation_limits:
+            logging.error(f"Invalid occupation: {occupation}")
+            return {"error": "Invalid occupation"}
+
+        # Calcular el límite de crédito
+        credit_limit = salary * occupation_limits[occupation]
+        logging.info(f"Credit limit calculated: {credit_limit}")
+
+        # Realizar la llamada a la API de Paycaddy para crear la wallet de crédito
+        wallet_data = {
+            "userId": card_order.user_id_paycaddy,
+            "currency": "USD",
+            "description": "Credit wallet created based on KYC verification",
+            "time": 0,
+            "limit": credit_limit
+        }
+
+        response = Paycaddy_client.create_wallet_credit_pc(wallet_data)
+        if 'error' in response:
+            logging.error(f"Error creating credit wallet: {response}")
+            return {"error": "Error creating credit wallet", "details": response}
+
+        logging.info(f"Credit wallet created successfully: {response}")
+        return response
+
+    except Exception as e:
+        logging.error(f"Error in create_credit_wallet_for_user: {str(e)}")
+        return {"error": "Exception occurred", "details": str(e)}
