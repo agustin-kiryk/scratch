@@ -41,7 +41,7 @@ def process_webhook_data():
 
         new_status = CardOrderKycStatus[kyc_status.upper()]  # Convert the string to the Enum type
         user_real = userRepository.find_by_id(card_order.user_id)
-        user_real.kycStatus = new_status
+        user_real.kycStatus = new_status.value
         userRepository.update(user_real)
 
         if new_status == CardOrderKycStatus.VERIFIED:
@@ -55,12 +55,12 @@ def process_webhook_data():
             "full_name": full_name,
             "age": age,
             "timestamp": timestamp,
-            "userId": user_real.id
+            "user_id": user_real.id
         }
 
-        existing_user_kyc = user_kyc_repository.find_by_user_id(user_id_paycaddy)
+        existing_user_kyc = user_kyc_repository.find_by_user_id(user_real.id)
         if existing_user_kyc:
-            user_kyc_repository.update(user_id_paycaddy, user_kyc_data)
+            user_kyc_repository.update(user_real.id, user_kyc_data)
         else:
             user_kyc_repository.insert(user_kyc_data)
 

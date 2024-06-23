@@ -39,5 +39,7 @@ class CardOrder(BaseModel):
 
     @staticmethod
     def from_mongo_dict(data):
-        data["id"] = str(data.pop("_id", ""))
+        # Convert ObjectId to string
+        if '_id' in data and isinstance(data['_id'], ObjectId):
+            data['_id'] = str(data['_id'])
         return CardOrder(**data)
