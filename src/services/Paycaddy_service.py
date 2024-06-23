@@ -1,13 +1,17 @@
 import logging
+from datetime import datetime
 
 from flask import request, jsonify
 
 from src.client import Paycaddy_client
 from src.config.mongodb import mongo
 from src.enums.Kyc_enum import CardOrderKycStatus
+from src.enums.Wallet_types_pc_E import WalletsTypesE
+from src.models.Wallet_pc_model import Wallet
 from src.repositories.Card_order_repository import CardOrderRepository
 from src.repositories.User_kyc_repository import UserKYCRepository
 from src.repositories.User_repository import UserRepository
+from src.repositories.Wallet_pc_repository import WalletRepository
 
 
 def process_webhook_data():
@@ -75,11 +79,18 @@ def process_webhook_data():
 def create_credit_wallet_for_user(card_order):
     """Evaluar salario y ocupación para establecer el límite de crédito y crear la wallet de crédito en Paycaddy."""
     try:
+        wallet_repo = WalletRepository()
+        existing_wallet = wallet_repo.find_by_user_id_and_type(card_order.user_id, WalletsTypesE.CREDIT.value)
+
+        if existing_wallet:
+            logging.info(f"User {card_order.user_id} already has a credit wallet: {existing_wallet}")
+            return {"message": "User already has a credit wallet", "wallet": existing_wallet}
+
         salary = card_order.salary
         occupation = card_order.occupation.lower()
         logging.info(f"Creating credit wallet for user with occupation: {occupation} and salary: {salary}")
 
-        # Establecer los límites según la ocupación TODO: PASAR A ENUMERADO
+        # Establecer los límites según la ocupación
         occupation_limits = {
             'trabajador': 0.30,
             'emprendedor': 0.25,
@@ -93,7 +104,7 @@ def create_credit_wallet_for_user(card_order):
             return {"error": "Invalid occupation"}
 
         # Calcular el límite de crédito
-        credit_limit = salary * occupation_limits[occupation]
+        credit_limit = int(salary * occupation_limits[occupation])  # Convertir el límite a entero
         logging.info(f"Credit limit calculated: {credit_limit}")
 
         # Realizar la llamada a la API de Paycaddy para crear la wallet de crédito
@@ -102,20 +113,45 @@ def create_credit_wallet_for_user(card_order):
             "currency": "USD",
             "description": "Credit wallet created based on KYC verification",
             "time": 0,
-            "limit": credit_limit
+            "limit": credit_limit,
+            'CreditProductCode': "1"
         }
 
+        logging.info(f"Sending request to Paycaddy: {wallet_data}")
         response = Paycaddy_client.create_wallet_credit_pc(wallet_data)
+        logging.info(f"response receipt to Paycaddy: {response}")
         if 'error' in response:
             logging.error(f"Error creating credit wallet: {response}")
             return {"error": "Error creating credit wallet", "details": response}
 
         logging.info(f"Credit wallet created successfully: {response}")
+        save_wallet(card_order.user_id, response)
         return response
 
     except Exception as e:
         logging.error(f"Error in create_credit_wallet_for_user: {str(e)}")
         return {"error": "Exception occurred", "details": str(e)}
+
+
+def save_wallet(user_id, wallet_data):
+    try:
+        wallet_repo = WalletRepository()
+        wallet_repo.find_by_user_id(user_id)
+
+        wallet = Wallet(
+            wallet_pc_id=wallet_data['id'],
+            user_id=user_id,
+            user_pc_id=wallet_data['userId'],
+            currency=wallet_data['currency'],
+            description=wallet_data['description'],
+            limit=wallet_data['limit'],
+            creation_date=datetime.fromisoformat(wallet_data['creationDate']),
+            type=WalletsTypesE.CREDIT.value
+        )
+        wallet_repo.insert(wallet)
+        logging.info(f"Wallet saved to database: {wallet}")
+    except Exception as e:
+        logging.error(f"Error saving wallet to database: {str(e)}")
 
 
 """-Endpoint para que se verifiquen los datos de la informacion financiera para luego aumentar el limite de la wallet de credito segun el salario
