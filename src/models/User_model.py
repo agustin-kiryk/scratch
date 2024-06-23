@@ -4,6 +4,8 @@ from datetime import datetime
 from typing import Optional
 import bcrypt
 
+from src.enums.Kyc_enum import CardOrderKycStatus
+
 
 class User(BaseModel):
     id: Optional[str] = Field(None, alias="_id")
@@ -23,6 +25,7 @@ class User(BaseModel):
     update_at: datetime = Field(default_factory=datetime.utcnow)
     financial_info_id: Optional[str] = None  # Referencia a la información financiera
     role: str = "user"
+    kycStatus: Optional[CardOrderKycStatus] = CardOrderKycStatus.NOT_REGISTER.value
 
     collection_name: str = 'users'
 

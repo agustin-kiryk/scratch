@@ -7,6 +7,7 @@ class CardOrderKycStatus(Enum):
     REJECTED = "rejected"
     REVIEW_NEEDED = "reviewNeeded"
     VERIFICATION_INPUTS_COMPLETED = "verification_inputs_completed"
+    NOT_REGISTER = "not_register"
 
     @staticmethod
     def list():
