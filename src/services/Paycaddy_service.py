@@ -116,3 +116,9 @@ def create_credit_wallet_for_user(card_order):
     except Exception as e:
         logging.error(f"Error in create_credit_wallet_for_user: {str(e)}")
         return {"error": "Exception occurred", "details": str(e)}
+
+
+"""-Endpoint para que se verifiquen los datos de la informacion financiera para luego aumentar el limite de la wallet de credito segun el salario
+-Endpoint para solicitar tarjeta Una vez que se aprueva el credito el usuario puede solicitar la tarjeta de credito
+CONSULTAR SI LA MISMA WALLET DE CREDITO VA A SER USADA PARA EL CREDITO PRINCIPAL DEL APP Y PARA LA TARJETA DE CREDITO O VAN A SER 2 WALLETS DIFERENTES 
+-REVISAR PUT INFORMACION FINANCIERA"""
